@@ -2,6 +2,16 @@ module Type.Type
     ( someFunc
     ) where
 
+
+  data Token =
+             EQUALSEQUALS | EQUALS | NOT_EQUALS | GREATER_THAN | LESS_THAN |          --Symbols
+             ADD | SUBTRACT | MULTIPLY | DIVIDE | LPAREN | RPAREN | LBRACE | RBRACE |   
+             COMMA | COLON | ARROW | SEMICOLON |
+             IntToken | VoidToken | BooleanToken | IfToken | ElseToken | WhileToken | ReturnToken  --Reserved words
+             | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken
+             | IntegerToken Int| IdentifierToken String | StructNameToken String
+              --  deriving (Show, Eq)
+
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
