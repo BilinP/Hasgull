@@ -1,5 +1,5 @@
 module Type.Type
-    ( someFunc
+    ( Token
     ) where
 
 
@@ -10,10 +10,13 @@ module Type.Type
              IntToken | VoidToken | BooleanToken | IfToken | ElseToken | WhileToken | ReturnToken  --Reserved words
              | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken
              | IntegerToken Int| IdentifierToken String | StructNameToken String
-              --  deriving (Show, Eq)
+                deriving (Show, Eq)
+
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
+
+
 
 
 -- Date : 03/05/2025
