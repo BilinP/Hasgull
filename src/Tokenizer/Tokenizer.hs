@@ -18,7 +18,7 @@ data Token =
              AddToken | SubtractToken| MultiplyToken | DivideToken | LParenToken | RParenToken | LBraceToken | RBraceToken |   
              CommaToken | ColonToken | ArrowToken | SemiColonToken |
              IntToken | VoidToken | BooleanToken | IfToken | ElseToken | WhileToken | ReturnToken  --Reserved words
-             | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken
+             | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken | LetToken
              | IntegerToken Int| IdentifierToken String | StructNameToken String
                 deriving (Show, Eq,Read)
 
@@ -50,6 +50,7 @@ tryReadIdentifierOrReservedWord "self" = SelfToken
 tryReadIdentifierOrReservedWord "method" = MethodToken
 tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken
+tryReadIdentifierOrReservedWord "let" = LetToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
 
@@ -80,7 +81,8 @@ tryReadSymbolToken ";" = SemiColonToken
 convertToToken testInput 
           | isAlpha (head testInput) = tryReadIdentifierOrReservedWord testInput
           | isDigit (head testInput)  = tryReadIntegerToken testInput
-          | otherwise = tryReadSymbolToken testInput
+          | isAscii (head testInput)  = tryReadSymbolToken testInput
+          | otherwise = error "Invalid input"
                         
                   
 -- takes a string and returns a list of the equivalent tokens

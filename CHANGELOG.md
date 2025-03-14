@@ -8,6 +8,9 @@ and this project adheres to the
 
 ## Unreleased
 
+### Changed
+ - modified convertToToken logic 
+
 ## 0.1.0.0 - 2005-03-13
 
 ### Added
