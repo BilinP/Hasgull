@@ -25,6 +25,7 @@ dependencies:
 - tasty-hunit
 - tasty-quickcheck
 
+
 ghc-options:
 - -Wall
 - -Wcompat
