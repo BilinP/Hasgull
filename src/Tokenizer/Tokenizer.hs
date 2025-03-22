@@ -89,10 +89,7 @@ symbolLast input = [tryReadIdentifierOrReservedWord (init input),tryReadSymbolTo
 symbolFirst :: String -> [Token]
 symbolFirst input = [tryReadSymbolToken [head input], tryReadIdentifierOrReservedWord (tail input)]
 
-handleSymbolwIdentifer stringConvert
-         | isAscii(head stringConvert) = symbolFirst stringConvert
-         | isAscii(last stringConvert) = symbolLast stringConvert  
-         | otherwise = error "Invalid"        
+    
                   
 -- takes a string and returns a list of the equivalent tokens
 tokenizer :: String -> [Token]
