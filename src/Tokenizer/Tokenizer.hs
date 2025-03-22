@@ -83,7 +83,16 @@ convertToToken testInput
           | isDigit (head testInput)  = tryReadIntegerToken testInput
           | isAscii (head testInput)  = tryReadSymbolToken testInput
           | otherwise = error "Invalid input"
-                        
+
+symbolLast :: String -> [Token]
+symbolLast input = [tryReadIdentifierOrReservedWord (init input),tryReadSymbolToken [last input]]
+symbolFirst :: String -> [Token]
+symbolFirst input = [tryReadSymbolToken [head input], tryReadIdentifierOrReservedWord (tail input)]
+
+handleSymbolwIdentifer stringConvert
+         | isAscii(head stringConvert) = symbolFirst stringConvert
+         | isAscii(last stringConvert) = symbolLast stringConvert  
+         | otherwise = error "Invalid"        
                   
 -- takes a string and returns a list of the equivalent tokens
 tokenizer :: String -> [Token]
