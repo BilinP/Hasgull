@@ -19,7 +19,8 @@ data Token =
              CommaToken | ColonToken | ArrowToken | SemiColonToken |
              IntToken | VoidToken | BooleanToken | IfToken | ElseToken | WhileToken | ReturnToken  --Reserved words
              | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken | LetToken
-             | IntegerToken Int| IdentifierToken String | StructNameToken String
+             | IntegerToken Int| IdentifierToken String | StructNameToken String |SelfTypeToken | TraitToken | StructToken | ForToken
+             | NewToken
                 deriving (Show, Eq,Read)
 
 
@@ -51,6 +52,10 @@ tryReadIdentifierOrReservedWord "method" = MethodToken
 tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken
 tryReadIdentifierOrReservedWord "let" = LetToken
+tryReadIdentifierOrReservedWord "new" = NewToken
+tryReadIdentifierOrReservedWord "trait" = NewToken
+tryReadIdentifierOrReservedWord "struct" = StructToken
+tryReadIdentifierOrReservedWord "for" = ForToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
 
