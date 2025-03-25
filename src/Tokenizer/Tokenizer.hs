@@ -3,6 +3,7 @@ module Tokenizer.Tokenizer
     ) where
 
 import Data.Char
+import Text.Read
 
 
 -- Goal: Take a string and return a list of tokens through our Tokenizer.
@@ -30,7 +31,7 @@ stripWhiteSpace :: String -> [String]
 stripWhiteSpace [] = []
 stripWhiteSpace x = words x
 
--function removes white space up to character
+-- function removes white space up to character
 removeLeadingWhiteSpace :: String -> String
 removeLeadingWhiteSpace xs = dropWhile isSpace xs
 
@@ -55,7 +56,7 @@ tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken
 tryReadIdentifierOrReservedWord "let" = LetToken
 tryReadIdentifierOrReservedWord "new" = NewToken
-tryReadIdentifierOrReservedWord "trait" = NewToken
+tryReadIdentifierOrReservedWord "trait" = TraitToken
 tryReadIdentifierOrReservedWord "struct" = StructToken
 tryReadIdentifierOrReservedWord "for" = ForToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
@@ -68,33 +69,32 @@ tryReadMultiCharSymbol :: String -> Maybe (Token, String)
 tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
 tryReadMultiCharSymbol ('=' : '=' : xs) = Just (EqualsToken, xs)
 tryReadMultiCharSymbol ('!' : '=' : xs) = Just (NotEqualToken, xs)
-tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
 tryReadMultiCharSymbol _ = Nothing
 
-tryReadSymbolToken :: String -> Token 
-tryReadSymbolToken "=" = EqualToken
-tryReadSymbolToken ">" = GreaterThanToken
-tryReadSymbolToken "<" = LessThanToken
-tryReadSymbolToken "+" = AddToken
-tryReadSymbolToken "-" = SubtractToken  
-tryReadSymbolToken "*" = MultiplyToken
-tryReadSymbolToken "/" = DivideToken
-tryReadSymbolToken "(" = LParenToken
-tryReadSymbolToken ")" = RParenToken
-tryReadSymbolToken "{" = LBraceToken
-tryReadSymbolToken "}" = RBraceToken
-tryReadSymbolToken "," = CommaToken
-tryReadSymbolToken ":" = ColonToken
-tryReadSymbolToken ";" = SemiColonToken
+tryReadSymbolToken :: Char -> Maybe Token 
+tryReadSymbolToken '=' = Just EqualToken
+tryReadSymbolToken '>' = Just GreaterThanToken
+tryReadSymbolToken '<' = Just LessThanToken
+tryReadSymbolToken '+' = Just AddToken
+tryReadSymbolToken '-' = Just SubtractToken  
+tryReadSymbolToken '*' = Just MultiplyToken
+tryReadSymbolToken '/' = Just DivideToken
+tryReadSymbolToken '(' = Just LParenToken
+tryReadSymbolToken ')' = Just RParenToken
+tryReadSymbolToken '{' = Just LBraceToken
+tryReadSymbolToken '}' = Just RBraceToken
+tryReadSymbolToken ',' = Just CommaToken
+tryReadSymbolToken ':' = Just ColonToken
+tryReadSymbolToken ';' = Just SemiColonToken
 tryReadSymbolToken _ = Nothing
 
 
 --entry point for tokenization
 tokenize :: String -> Either String [Token]
-tokenize input = tokenizationLoop removeLeadingWhiteSpace input
+tokenize input = tokenizationLoop (removeLeadingWhiteSpace input)
 
 -- recursively loop extracting tokens
-tokenizationLoop :: String -> Either String [Tokens]
+tokenizationLoop :: String -> Either String [Token]
 -- base case when all characters have been tokenized
 tokenizationLoop "" = Right []
 
@@ -119,8 +119,8 @@ nextToken (firstChar:restOfInputString)
 -- Function that creates identifiers and reserved words tokens
 handleIdentifierOrReserveWord :: Char -> String -> Either String (Token, String)
 handleIdentifierOrReserveWord firstChar restOfInputString =
-  let (identityBody, leftoverString) = span isAlphaNum cs
-    identifier = c: identityBody
+  let (identityBody, leftoverString) = span isAlphaNum restOfInputString
+    identifier = firstChar: identityBody
     newToken = tryReadIdentifierOrReservedWord identifier
   in Right (newToken, leftoverString)
 
@@ -137,20 +137,16 @@ handleNumber firstNum restOfInputString =
 handleSymbol :: String -> Either String (Token, String)
 handleSymbol [] = Left "No input to match symbol."
 
-handleSymbol
+handleSymbol wholeString@(firstChar:restOfInputString) =
+  case tryReadMultiCharSymbol wholeString of
+    Just (newToken, leftoverString) -> Right (newToken, leftoverString)
+    Nothing ->
+      case tryReadSymbolToken firstChar of
+        Just newToken -> Right (newToken, restOfInputString)
+        Nothing -> Left $ "Unrecognized symbol near here `: " ++ take 8 wholeString ++ "`"
 
 
--- Takes a string and matches against our tokenizing functions to return the matching token
-convertToToken testInput 
-          | isAlpha (head testInput) = tryReadIdentifierOrReservedWord testInput
-          | isDigit (head testInput)  = tryReadIntegerToken testInput
-          | isAscii (head testInput)  = tryReadSymbolToken testInput
-          | otherwise = error "Invalid input"
-                        
-                  
--- takes a string and returns a list of the equivalent tokens
-tokenizer :: String -> [Token]
-tokenizer userInput = map convertToToken (stripWhiteSpace userInput)
+
 
                             
 
