@@ -1,9 +1,10 @@
 module Tokenizer.Tokenizer
     ( someFunc
+    , tokenizer
     ) where
 
 import Data.Char
-
+import Tokenizer.Token (Token(..))
 
 -- Goal: Take a string and return a list of tokens through our Tokenizer.
 -- 1. Take a string and split it into words.  We can do this by calling the default words function on our input string. done!
@@ -13,14 +14,7 @@ import Data.Char
 
     
 
-data Token =
-             EqualsToken | EqualToken | NotEqualToken | GreaterThanToken | LessThanToken |          --Symbols
-             AddToken | SubtractToken| MultiplyToken | DivideToken | LParenToken | RParenToken | LBraceToken | RBraceToken |   
-             CommaToken | ColonToken | ArrowToken | SemiColonToken |
-             IntToken | VoidToken | BooleanToken | IfToken | ElseToken | WhileToken | ReturnToken  --Reserved words
-             | PrintLnToken | TrueToken | FalseToken | SelfToken | MethodToken | BreakToken | ImplToken | LetToken
-             | IntegerToken Int| IdentifierToken String | StructNameToken String
-                deriving (Show, Eq,Read)
+
 
 
 -- Uses words to split a string into a list of strings. Pattern matching to deal with emtpy strings. 
@@ -51,6 +45,8 @@ tryReadIdentifierOrReservedWord "method" = MethodToken
 tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken
 tryReadIdentifierOrReservedWord "let" = LetToken
+tryReadIdentifierOrReservedWord "trait" = TraitToken
+tryReadIdentifierOrReservedWord "new" = NewToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
 
