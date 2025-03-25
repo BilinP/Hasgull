@@ -1,5 +1,6 @@
 module Tokenizer.Tokenizer
     ( someFunc
+    , tokenize 
     ) where
 
 import Data.Char
@@ -120,18 +121,20 @@ nextToken (firstChar:restOfInputString)
 handleIdentifierOrReserveWord :: Char -> String -> Either String (Token, String)
 handleIdentifierOrReserveWord firstChar restOfInputString =
   let (identityBody, leftoverString) = span isAlphaNum restOfInputString
-    identifier = firstChar: identityBody
+    identifier = firstChar : identityBody
     newToken = tryReadIdentifierOrReservedWord identifier
   in Right (newToken, leftoverString)
 
+
 -- Function that creates Number token from Input String
 handleNumber :: Char -> String -> Either String (Token, String)
-handleNumber firstNum restOfInputString = 
+handleNumber firstNum restOfInputString =
   let (numbers, leftoverString) = span isDigit restOfInputString
-    wholeNumber = firstNum : numbers
+      wholeNumber = firstNum : numbers
   in case readMaybe wholeNumber of
-    Just intValue -> Right (IntegerToken intValue, leftoverString)
-    Nothing -> Left $ "Invalid integer: " ++ wholeNumber
+       Just intValue -> Right (IntegerToken intValue, leftoverString)
+       Nothing       -> Left $ "Invalid integer: " ++ wholeNumber
+
 
 -- Function that creates Symbol Token from Input String
 handleSymbol :: String -> Either String (Token, String)
@@ -148,7 +151,14 @@ handleSymbol wholeString@(firstChar:restOfInputString) =
 
 
 
-                            
+                          
+main :: IO ()
+main = do
+  putStrLn "Enter input to tokenize:"
+  input <- getLine
+  case tokenize input of
+    Left err -> putStrLn $ "Error: " ++ err
+    Right tokens -> do
+      putStrLn "Tokens:"
+      print tokens
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
