@@ -30,7 +30,9 @@ stripWhiteSpace :: String -> [String]
 stripWhiteSpace [] = []
 stripWhiteSpace x = words x
 
-
+-function removes white space up to character
+removeLeadingWhiteSpace :: String -> String
+removeLeadingWhiteSpace xs = dropWhile isSpace xs
 
 
 
@@ -62,10 +64,15 @@ tryReadIdentifierOrReservedWord x = IdentifierToken x
 tryReadIntegerToken :: String -> Token
 tryReadIntegerToken x = IntegerToken (read x :: Int)
 
+tryReadMultiCharSymbol :: String -> Maybe (Token, String)
+tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
+tryReadMultiCharSymbol ('=' : '=' : xs) = Just (EqualsToken, xs)
+tryReadMultiCharSymbol ('!' : '=' : xs) = Just (NotEqualToken, xs)
+tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
+tryReadMultiCharSymbol _ = Nothing
+
 tryReadSymbolToken :: String -> Token 
 tryReadSymbolToken "=" = EqualToken
-tryReadSymbolToken "==" = EqualsToken
-tryReadSymbolToken "!=" = NotEqualToken
 tryReadSymbolToken ">" = GreaterThanToken
 tryReadSymbolToken "<" = LessThanToken
 tryReadSymbolToken "+" = AddToken
@@ -78,8 +85,59 @@ tryReadSymbolToken "{" = LBraceToken
 tryReadSymbolToken "}" = RBraceToken
 tryReadSymbolToken "," = CommaToken
 tryReadSymbolToken ":" = ColonToken
-tryReadSymbolToken "=>" = ArrowToken
 tryReadSymbolToken ";" = SemiColonToken
+tryReadSymbolToken _ = Nothing
+
+
+--entry point for tokenization
+tokenize :: String -> Either String [Token]
+tokenize input = tokenizationLoop removeLeadingWhiteSpace input
+
+-- recursively loop extracting tokens
+tokenizationLoop :: String -> Either String [Tokens]
+-- base case when all characters have been tokenized
+tokenizationLoop "" = Right []
+
+--recursive case
+tokenizationLoop s = 
+  case nextToken s of
+    Left err -> Left err
+    Right (currToken, restStringList) -> do
+      let stringWithNoSpaceInHeader = removeLeadingWhiteSpace restStringList
+      currTokenList <- tokenizationLoop stringWithNoSpaceInHeader
+      return (currToken : currTokenList)
+
+-- extract a single token from list
+nextToken :: String -> Either String (Token, String)
+nextToken "" = Left "Input unexpetedly ended"
+
+nextToken (firstChar:restOfInputString)
+  | isAlpha firstChar = handleIdentifierOrReserveWord firstChar restOfInputString
+  | isDigit firstChar = handleNumber firstChar restOfInputString
+  | otherwise = handleSymbol (firstChar:restOfInputString)
+
+-- Function that creates identifiers and reserved words tokens
+handleIdentifierOrReserveWord :: Char -> String -> Either String (Token, String)
+handleIdentifierOrReserveWord firstChar restOfInputString =
+  let (identityBody, leftoverString) = span isAlphaNum cs
+    identifier = c: identityBody
+    newToken = tryReadIdentifierOrReservedWord identifier
+  in Right (newToken, leftoverString)
+
+-- Function that creates Number token from Input String
+handleNumber :: Char -> String -> Either String (Token, String)
+handleNumber firstNum restOfInputString = 
+  let (numbers, leftoverString) = span isDigit restOfInputString
+    wholeNumber = firstNum : numbers
+  in case readMaybe wholeNumber of
+    Just intValue -> Right (IntegerToken intValue, leftoverString)
+    Nothing -> Left $ "Invalid integer: " ++ wholeNumber
+
+-- Function that creates Symbol Token from Input String
+handleSymbol :: String -> Either String (Token, String)
+handleSymbol [] = Left "No input to match symbol."
+
+handleSymbol
 
 
 -- Takes a string and matches against our tokenizing functions to return the matching token
