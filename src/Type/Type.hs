@@ -1,3 +1,5 @@
+
+{-
 module Type.Type
     ( Token
     ) where
@@ -16,7 +18,7 @@ module Type.Type
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-
+-}
 
 
 -- Date : 03/05/2025
