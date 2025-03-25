@@ -1,10 +1,10 @@
 
-{-
+
 module Type.Type
-    ( Token
+    ( someFunc
     ) where
 
-
+{-
   data Token =
              EQUALSEQUALS | EQUALS | NOT_EQUALS | GREATER_THAN | LESS_THAN |          --Symbols
              ADD | SUBTRACT | MULTIPLY | DIVIDE | LPAREN | RPAREN | LBRACE | RBRACE |   
@@ -14,11 +14,11 @@ module Type.Type
              | IntegerToken Int| IdentifierToken String | StructNameToken String
                 deriving (Show, Eq)
 
-
+-}
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
--}
+
 
 
 -- Date : 03/05/2025
