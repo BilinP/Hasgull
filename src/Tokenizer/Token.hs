@@ -2,7 +2,7 @@ module Tokenizer.Token (
    Token(..)
 )where
 
-
+   -- Moved Token definitions to here just to make a bit clearer where they are being defined. Mostly for Test cases.
     data Token =
          EqualsToken 
          | EqualToken 
