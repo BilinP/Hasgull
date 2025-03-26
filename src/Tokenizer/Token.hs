@@ -38,6 +38,7 @@ module Tokenizer.Token (
          | LetToken
          | TraitToken
          | NewToken
+         | ForToken
          | StructToken
          | IntegerToken Int
          | IdentifierToken String 
