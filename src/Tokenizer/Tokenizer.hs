@@ -1,6 +1,6 @@
 
 module Tokenizer.Tokenizer (
-  tokenize,
+  tokenize
 ) where
 
 import Data.Char
@@ -39,8 +39,10 @@ tryReadIdentifierOrReservedWord "struct" = StructToken
 tryReadIdentifierOrReservedWord "for" = ForToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
-tryReadIntegerToken :: String -> Token
-tryReadIntegerToken x = IntegerToken (read x :: Int)
+
+--IS THIS NEEDED ?
+--tryReadIntegerToken :: String -> Token
+--tryReadIntegerToken x = IntegerToken (read x :: Int)
 
 tryReadMultiCharSymbol :: String -> Maybe (Token, String)
 tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
@@ -119,24 +121,3 @@ handleSymbol wholeString@(firstChar : restOfInputString) =
                 ++ take 8 wholeString
                 ++ "`"
             )
-
--- Example main (usually you'd put this in Main.hs, but here for demo):
-main :: IO ()
-main = do
-  putStrLn "Enter input to tokenize:"
-  input <- readMultipleLines
-  case tokenize input of
-    Left err -> putStrLn $ "Error: " ++ err
-    Right toks -> do
-      putStrLn "Tokens:"
-      print toks
-
--- Helper function to read multiple lines until an empty line is entered
-readMultipleLines :: IO String
-readMultipleLines = do
-  line <- getLine
-  if null line
-    then return "" -- Stop reading when an empty line is entered
-    else do
-      rest <- readMultipleLines
-      return (line ++ "\n" ++ rest)
