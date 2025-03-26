@@ -28,7 +28,8 @@ tryReadIdentifierOrReservedWord "return" = ReturnToken
 tryReadIdentifierOrReservedWord "println" = PrintLnToken
 tryReadIdentifierOrReservedWord "true" = TrueToken
 tryReadIdentifierOrReservedWord "false" = FalseToken
-tryReadIdentifierOrReservedWord "self" = SelfToken
+tryReadIdentifierOrReservedWord "Self" = SelfToken
+tryReadIdentifierOrReservedWord "self" = LowerCaseSelfToken
 tryReadIdentifierOrReservedWord "method" = MethodToken
 tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken
@@ -39,10 +40,6 @@ tryReadIdentifierOrReservedWord "struct" = StructToken
 tryReadIdentifierOrReservedWord "for" = ForToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
-
---IS THIS NEEDED ?
---tryReadIntegerToken :: String -> Token
---tryReadIntegerToken x = IntegerToken (read x :: Int)
 
 tryReadMultiCharSymbol :: String -> Maybe (Token, String)
 tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
