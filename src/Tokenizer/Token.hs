@@ -32,6 +32,7 @@ module Tokenizer.Token (
          | TrueToken 
          | FalseToken 
          | SelfToken 
+         | LowerCaseSelfToken
          | MethodToken 
          | BreakToken 
          | ImplToken 
