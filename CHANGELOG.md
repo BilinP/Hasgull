@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## 0.1.0.0 - 2025-03-22
+
+### Added
+ Helper function to deal with symbols that are bundled with identifier "a1: 5;", 
+takes a string and returns a list of tokens. While that works, We need to figure out if it's needed and if so,
+how to best implement it into the tokenizer logic
+
 ## Unreleased
 
 ### Changed

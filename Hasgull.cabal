@@ -28,6 +28,7 @@ library
       Generation.Generation
       Lib
       Parser.Parser
+      Tokenizer.Token
       Tokenizer.Tokenizer
       Type.Type
   other-modules:

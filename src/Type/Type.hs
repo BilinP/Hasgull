@@ -14,9 +14,6 @@ module Type.Type
              | IntegerToken Int| IdentifierToken String | StructNameToken String
                 deriving (Show, Eq)
 
--}
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
 
 
 

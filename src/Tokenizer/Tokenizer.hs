@@ -1,3 +1,4 @@
+
 module Tokenizer.Tokenizer (
   someFunc,
   tokenize,
@@ -5,10 +6,6 @@ module Tokenizer.Tokenizer (
 
 import Data.Char
 import Text.Read
-
--- Just a placeholder function to export.
-someFunc :: IO ()
-someFunc = putStrLn "Hello from someFunc"
 
 data Token
   = EqualsToken
@@ -52,6 +49,7 @@ data Token
   | StructNameToken String
   | SelfTypeToken
   deriving (Show, Eq, Read)
+
 
 stripWhiteSpace :: String -> [String]
 stripWhiteSpace [] = []
