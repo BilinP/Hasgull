@@ -1,8 +1,10 @@
+
+
 module Type.Type
-    ( Token
+    ( someFunc
     ) where
 
-
+{-
   data Token =
              EQUALSEQUALS | EQUALS | NOT_EQUALS | GREATER_THAN | LESS_THAN |          --Symbols
              ADD | SUBTRACT | MULTIPLY | DIVIDE | LPAREN | RPAREN | LBRACE | RBRACE |   
