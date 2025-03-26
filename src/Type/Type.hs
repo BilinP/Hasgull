@@ -13,9 +13,6 @@ module Type.Type
                 deriving (Show, Eq)
 
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
 
 
 
