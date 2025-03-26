@@ -1,55 +1,11 @@
 
 module Tokenizer.Tokenizer (
-  someFunc,
   tokenize,
 ) where
 
 import Data.Char
 import Text.Read
-
-data Token
-  = EqualsToken
-  | EqualToken
-  | NotEqualToken
-  | GreaterThanToken
-  | LessThanToken
-  | AddToken
-  | SubtractToken
-  | MultiplyToken
-  | DivideToken
-  | LParenToken
-  | RParenToken
-  | LBraceToken
-  | RBraceToken
-  | CommaToken
-  | ColonToken
-  | ArrowToken
-  | SemiColonToken
-  | IntToken
-  | VoidToken
-  | BooleanToken
-  | IfToken
-  | ElseToken
-  | WhileToken
-  | ReturnToken
-  | PrintLnToken
-  | TrueToken
-  | FalseToken
-  | SelfToken
-  | MethodToken
-  | BreakToken
-  | ImplToken
-  | LetToken
-  | NewToken
-  | TraitToken
-  | StructToken
-  | ForToken
-  | IntegerToken Int
-  | IdentifierToken String
-  | StructNameToken String
-  | SelfTypeToken
-  deriving (Show, Eq, Read)
-
+import Tokenizer.Token (Token(..))
 
 stripWhiteSpace :: String -> [String]
 stripWhiteSpace [] = []
