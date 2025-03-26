@@ -1,15 +1,16 @@
 
 module Tokenizer.Tokenizer (
-  tokenize,
+  tokenize
 ) where
 
 import Data.Char
 import Text.Read
 import Tokenizer.Token (Token(..))
 
-stripWhiteSpace :: String -> [String]
-stripWhiteSpace [] = []
-stripWhiteSpace x = words x
+removeComments :: String -> String
+removeComments [] = []
+removeComments ('/' : '/' : rest) = removeComments (dropWhile (/= '\n') rest)
+removeComments (keep : check) = keep : removeComments check 
 
 -- Removes leading whitespace from a string
 removeLeadingWhiteSpace :: String -> String
@@ -38,8 +39,10 @@ tryReadIdentifierOrReservedWord "struct" = StructToken
 tryReadIdentifierOrReservedWord "for" = ForToken
 tryReadIdentifierOrReservedWord x = IdentifierToken x
 
-tryReadIntegerToken :: String -> Token
-tryReadIntegerToken x = IntegerToken (read x :: Int)
+
+--IS THIS NEEDED ?
+--tryReadIntegerToken :: String -> Token
+--tryReadIntegerToken x = IntegerToken (read x :: Int)
 
 tryReadMultiCharSymbol :: String -> Maybe (Token, String)
 tryReadMultiCharSymbol ('=' : '>' : xs) = Just (ArrowToken, xs)
@@ -66,7 +69,7 @@ tryReadSymbolToken _ = Nothing
 
 -- | The main tokenizing function
 tokenize :: String -> Either String [Token]
-tokenize input = tokenizationLoop (removeLeadingWhiteSpace input)
+tokenize = tokenizationLoop.removeLeadingWhiteSpace.removeComments
 
 tokenizationLoop :: String -> Either String [Token]
 -- base case
@@ -118,14 +121,3 @@ handleSymbol wholeString@(firstChar : restOfInputString) =
                 ++ take 8 wholeString
                 ++ "`"
             )
-
--- Example main (usually you'd put this in Main.hs, but here for demo):
-main :: IO ()
-main = do
-  putStrLn "Enter input to tokenize:"
-  input <- getLine
-  case tokenize input of
-    Left err -> putStrLn $ "Error: " ++ err
-    Right toks -> do
-      putStrLn "Tokens:"
-      print toks

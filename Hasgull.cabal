@@ -64,7 +64,7 @@ executable Hasgull-exe
 
 test-suite Hasgull-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: test.hs
   other-modules:
       Paths_Hasgull
   autogen-modules:
