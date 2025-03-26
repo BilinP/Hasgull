@@ -7,9 +7,10 @@ import Data.Char
 import Text.Read
 import Tokenizer.Token (Token(..))
 
-stripWhiteSpace :: String -> [String]
-stripWhiteSpace [] = []
-stripWhiteSpace x = words x
+removeComments :: String -> String
+removeComments [] = []
+removeComments ('/' : '/' : rest) = removeComments (dropWhile (/= '\n') rest)
+removeComments (keep : check) = keep : removeComments check 
 
 -- Removes leading whitespace from a string
 removeLeadingWhiteSpace :: String -> String
@@ -66,7 +67,7 @@ tryReadSymbolToken _ = Nothing
 
 -- | The main tokenizing function
 tokenize :: String -> Either String [Token]
-tokenize input = tokenizationLoop (removeLeadingWhiteSpace input)
+tokenize = tokenizationLoop.removeLeadingWhiteSpace.removeComments
 
 tokenizationLoop :: String -> Either String [Token]
 -- base case
@@ -123,9 +124,19 @@ handleSymbol wholeString@(firstChar : restOfInputString) =
 main :: IO ()
 main = do
   putStrLn "Enter input to tokenize:"
-  input <- getLine
+  input <- readMultipleLines
   case tokenize input of
     Left err -> putStrLn $ "Error: " ++ err
     Right toks -> do
       putStrLn "Tokens:"
       print toks
+
+-- Helper function to read multiple lines until an empty line is entered
+readMultipleLines :: IO String
+readMultipleLines = do
+  line <- getLine
+  if null line
+    then return "" -- Stop reading when an empty line is entered
+    else do
+      rest <- readMultipleLines
+      return (line ++ "\n" ++ rest)
