@@ -11,11 +11,15 @@ tests :: TestTree --Define the tree here
 tests = testGroup "Tests"  --Put all of your testCases here and follow the below syntax to design test cases
 
   [   testCase "Testing tokenization of assignment expresssion " $
-       (tokenize "a1 = 5") @?= [IdentifierToken "a1", EqualToken, IntegerToken 5]
-  ,
-      testCase "Tokenize binary addition operations" $
-       (tokenize "5 + 5")  @?= [IntegerToken 5, AddToken, IntegerToken 5]
-  ,
-      testCase "Tokenize trinary addition operations" $
-       (tokenize "5 + 5 + 10") @?=  [IntegerToken 5, AddToken, IntegerToken 5, AddToken, IntegerToken 10]
+       case tokenize "a1 = 5" of
+        Right tokens -> tokens @?= [IdentifierToken "a1", EqualToken, IntegerToken 5]
+        Left err -> assertFailure err
+     , testCase "Tokenize binary addition operations" $
+       case tokenize "5 + 5" of
+        Right tokens -> tokens @?= [IntegerToken 5, AddToken, IntegerToken 5]
+        Left err -> assertFailure err
+     ,  testCase "Tokenize trinary addition operations" $
+        case tokenize "5 + 5 + 5" of 
+         Right tokens -> tokens @?= [IntegerToken 5, AddToken, IntegerToken 5, AddToken, IntegerToken 5]
+         Left err -> assertFailure err
   ]
