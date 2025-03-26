@@ -22,4 +22,8 @@ tests = testGroup "Tests"  --Put all of your testCases here and follow the below
         case tokenize "5 + 5 + 5" of 
          Right tokens -> tokens @?= [IntegerToken 5, AddToken, IntegerToken 5, AddToken, IntegerToken 5]
          Left err -> assertFailure err
+     ,  testCase "Tokenize input that cannot be tokenized" $
+        case tokenize "2assef" of 
+         Right tokens -> tokens @?= [IdentifierToken "2assef"]
+         Left err -> assertFailure err
   ]
