@@ -53,11 +53,15 @@ tests = testGroup "Tokenizer Tests"
       either assertFailure (@?= [IntegerToken 10, SubtractToken, IntegerToken 5, MultiplyToken, IntegerToken 2, DivideToken, IntegerToken 4]) 
       (tokenize "10 - 5 * 2 / 4")
   ,
+    testCase "Tokenize WhileIf" $
+     either assertFailure (@?= [IdentifierToken "WhileIf"]) (tokenize "WhileIf")
+  ,
      testCase "Unrecognized symbol error message" $
       tokenize "$" @?= Left "Unrecognized symbol near here `: $`"
   ,
      testCase "unrecognized symbol error within a more comprehensive input string" $
        tokenize "let a1 $ 5" @?= Left "Unrecognized symbol near here `: $`"
+    
   ,
      testCase "Invalid integer error message" $
       tokenize "123abc" @?= Left "Invalid integer: 123abc"

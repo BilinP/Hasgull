@@ -84,14 +84,15 @@ validLeftOver (x : xs) -- Take from the first character
 tokenize :: String -> Either String [Token]
 tokenize input = 
      let strippedInput = stripWhiteSpace (removeComments input) --Remove comments before we strip all whitespace
-     in tokenizeStripped strippedInput -- Strip all whitespace and go through the "words" list
+     in tokenizeStrippedWords strippedInput -- Strip all whitespace and go through the "words" list
       
 -- Simply just tokenization loop but we use it on each "word" and add tokens
-tokenizeStripped :: [String] -> Either String [Token]
-tokenizeStripped [] =  Right [] --Nothing in input string, base case     
-tokenizeStripped (word:rest) = do 
-    tokensfromCurrent <- tokenizationLoop word
-    tokensfromRest <- tokenizeStripped rest
+-- It should just basically be the exact logic as tokenizationLoop but goes through
+tokenizeStrippedWords :: [String] -> Either String [Token]
+tokenizeStrippedWords [] =  Right [] --Nothing in input string, base case     
+tokenizeStrippedWords (word:rest) = do 
+    tokensfromCurrent <- tokenizationLoop word --Tokenize current "word"
+    tokensfromRest <- tokenizeStrippedWords rest    -- Tokenize the rest of the word list
     return (tokensfromCurrent ++ tokensfromRest)
 
 
