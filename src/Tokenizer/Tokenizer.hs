@@ -65,7 +65,7 @@ tryReadSymbolToken ':' = Just ColonToken
 tryReadSymbolToken ';' = Just SemiColonToken
 tryReadSymbolToken _ = Nothing
 
--- | The main tokenizing function
+
 
 
 stripWhiteSpace :: String -> [String]
@@ -80,7 +80,7 @@ validLeftOver (x : xs) -- Take from the first character
    | isAlpha x = False
    | otherwise = True
      
-
+-- | The main tokenizing function
 tokenize :: String -> Either String [Token]
 tokenize input = 
      let strippedInput = stripWhiteSpace (removeComments input) --Remove comments before we strip all whitespace
