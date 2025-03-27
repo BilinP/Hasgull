@@ -1,6 +1,7 @@
 
 module Tokenizer.Tokenizer (
-  tokenize
+  tokenize,
+  stripWhiteSpace
 ) where
 
 import Data.Char
@@ -65,8 +66,34 @@ tryReadSymbolToken ';' = Just SemiColonToken
 tryReadSymbolToken _ = Nothing
 
 -- | The main tokenizing function
+
+
+stripWhiteSpace :: String -> [String]
+stripWhiteSpace "" = []
+stripWhiteSpace input = words input
+
+--Determines if the left over string in the second list of span tuple is valid.
+-- This should only really be used in handleNumber, as 123abc for example should not be a valid token
+validLeftOver :: String -> Bool 
+validLeftOver "" = True -- no more left over words, so automatically a valid integer
+validLeftOver (x : xs) -- Take from the first character 
+   | isAlpha x = False
+   | otherwise = True
+     
+
 tokenize :: String -> Either String [Token]
-tokenize = tokenizationLoop.removeLeadingWhiteSpace.removeComments
+tokenize input = 
+     let strippedInput = stripWhiteSpace (removeComments input) --Remove comments before we strip all whitespace
+     in tokenizeStripped strippedInput -- Strip all whitespace and go through the "words" list
+      
+-- Simply just tokenization loop but we use it on each "word" and add tokens
+tokenizeStripped :: [String] -> Either String [Token]
+tokenizeStripped [] =  Right [] --Nothing in input string, base case     
+tokenizeStripped (word:rest) = do 
+    tokensfromCurrent <- tokenizationLoop word
+    tokensfromRest <- tokenizeStripped rest
+    return (tokensfromCurrent ++ tokensfromRest)
+
 
 tokenizationLoop :: String -> Either String [Token]
 -- base case
@@ -101,7 +128,10 @@ handleNumber firstNum restOfInputString =
   let (numbers, leftoverString) = span isDigit restOfInputString
       wholeNumber = firstNum : numbers
    in case readMaybe wholeNumber of
-        Just intValue -> Right (IntegerToken intValue, leftoverString)
+        Just intValue ->
+         if validLeftOver leftoverString -- if nothing within leftoverString or leftover doesn't start with a letter, valid integer.
+            then Right (IntegerToken intValue, leftoverString)
+            else Left ("Invalid integer: " ++ wholeNumber ++ leftoverString)      
         Nothing -> Left ("Invalid integer: " ++ wholeNumber)
 
 handleSymbol :: String -> Either String (Token, String)

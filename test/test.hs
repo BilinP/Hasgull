@@ -47,7 +47,7 @@ tests = testGroup "Tokenizer Tests"
   ,
      testCase "Tokenize Int, Void, Boolean, Else, While, PrintLn, Self, Method, Break, Impl, New, For" $
       either assertFailure (@?= [IntToken, VoidToken, BooleanToken, ElseToken, WhileToken, PrintLnToken, SelfToken, MethodToken, BreakToken, ImplToken, NewToken, ForToken]) 
-      (tokenize "Int Void Boolean else while println self method break impl new for")
+      (tokenize "Int Void Boolean else while println Self method break impl new for")
   ,
      testCase "Tokenize Subtract, Multiply, Divide tokens" $
       either assertFailure (@?= [IntegerToken 10, SubtractToken, IntegerToken 5, MultiplyToken, IntegerToken 2, DivideToken, IntegerToken 4]) 
@@ -56,6 +56,11 @@ tests = testGroup "Tokenizer Tests"
      testCase "Unrecognized symbol error message" $
       tokenize "$" @?= Left "Unrecognized symbol near here `: $`"
   ,
+     testCase "unrecognized symbol error within a more comprehensive input string" $
+       tokenize "let a1 $ 5" @?= Left "Unrecognized symbol near here `: $`"
+  ,
      testCase "Invalid integer error message" $
       tokenize "123abc" @?= Left "Invalid integer: 123abc"
+
+  
   ]
