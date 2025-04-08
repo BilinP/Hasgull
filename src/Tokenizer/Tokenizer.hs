@@ -62,6 +62,7 @@ tryReadSymbolToken '{' = Just LBraceToken
 tryReadSymbolToken '}' = Just RBraceToken
 tryReadSymbolToken ',' = Just CommaToken
 tryReadSymbolToken ':' = Just ColonToken
+tryReadSymbolToken '.' = Just DotToken
 tryReadSymbolToken ';' = Just SemiColonToken
 tryReadSymbolToken _ = Nothing
 
