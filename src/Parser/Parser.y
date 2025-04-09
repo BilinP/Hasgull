@@ -74,6 +74,7 @@ ProgramItem : StructDef {StructDefLeaf $1}
             | TraitDef {TraitDefLeaf $1 }
             | ImplDef {ImplDefLeaf $1}
             | FuncDef {FuncDefLeaf $1}
+
 Exp : EqualsExp {$1}
 
 EqualsExp : LessThanExp EqualsOp LessThanExp {EqualsExpRoot $1 $2 $3}
@@ -183,13 +184,31 @@ MultOp : '*' {MultiplyToken}
          | Impldef ImplDef
          | FuncDefItem FuncDef
 
- data Exp = EqualsExpRoot Exp Token Exp | LessThanExpRoot Exp Token Exp | AddExpRoot Exp Token Exp
-   | CallExpRoot Exp Token Exp | DotExpRoot Exp Token Exp
-   | IntRoot Int
+  data Exp = EqualsExpRoot LessThanExp Token LessThanExp
+
+
+ data LessThanExp =
+    LessThanExpRoot AddExp Token AddExp
+
+ data AddExp =
+    AddExpRoot MultExp Token MultExp
+
+ data MultExp =
+    MultExpRoot CallExp Token CallExp
+
+ data CallExp =
+    CallExpRoot DotExp Token DotExp
+
+ data DotExp =
+    DotExpRoot PrimaryExp Token PrimaryExp
+
+ data PrimaryExp =
+     IntRoot Int
    | VarRoot String
    | BoolRoot Bool
    | ParenExpRoot Exp
    | NewRoot String [StructActualParam]
+
 
  data StructActualParam = StructActualParamRoot String Exp
 
@@ -203,6 +222,7 @@ MultOp : '*' {MultiplyToken}
    | BlockStmt [Stmt]
    | ReturnStmt (Maybe Exp)
    | ExpStmt Exp
+
 
  data StructDef = StructDefRoot String [Param]
  data TraitDef = TraitDefRoot String [AbsMethodDef]

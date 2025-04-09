@@ -1019,7 +1019,8 @@ parseTokens tks = happyRunIdentity happySomeParser where
 happySeq = happyDontSeq
 
 
-data Program = 
+--AST representation. The website didn't really give me a clear indicator on how to deal with * closures so I just did lists.
+  data Program = 
          Program [ProgramItem] [Stmt]
 
 
@@ -1029,13 +1030,31 @@ data Program =
          | Impldef ImplDef
          | FuncDefItem FuncDef
 
- data Exp = EqualsExpRoot Exp Token Exp | LessThanExpRoot Exp Token Exp | AddExpRoot Exp Token Exp
-   | CallExpRoot Exp Token Exp | DotExpRoot Exp Token Exp
-   | IntRoot Int
+  data Exp = EqualsExpRoot LessThanExp Token LessThanExp
+
+
+ data LessThanExp =
+    LessThanExpRoot AddExp Token AddExp
+
+ data AddExp =
+    AddExpRoot MultExp Token MultExp
+
+ data MultExp =
+    MultExpRoot CallExp Token CallExp
+
+ data CallExp =
+    CallExpRoot DotExp Token DotExp
+
+ data DotExp =
+    DotExpRoot PrimaryExp Token PrimaryExp
+
+ data PrimaryExp =
+     IntRoot Int
    | VarRoot String
    | BoolRoot Bool
    | ParenExpRoot Exp
    | NewRoot String [StructActualParam]
+
 
  data StructActualParam = StructActualParamRoot String Exp
 
@@ -1049,6 +1068,7 @@ data Program =
    | BlockStmt [Stmt]
    | ReturnStmt (Maybe Exp)
    | ExpStmt Exp
+
 
  data StructDef = StructDefRoot String [Param]
  data TraitDef = TraitDefRoot String [AbsMethodDef]
