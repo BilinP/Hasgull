@@ -21,6 +21,7 @@ module Tokenizer.Token (
          | ColonToken 
          | ArrowToken 
          | SemiColonToken 
+         | DotToken
          |IntToken 
          | VoidToken 
          | BooleanToken 
