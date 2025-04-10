@@ -27,7 +27,6 @@ library
   exposed-modules:
       Generation.Generation
       Lib
-      Parser.Expr
       Parser.Parser
       Tokenizer.Token
       Tokenizer.Tokenizer
@@ -40,7 +39,8 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      array >=0.5.8.0
+    , base >=4.7 && <5
     , tasty
     , tasty-hunit
     , tasty-quickcheck
@@ -57,6 +57,7 @@ executable Hasgull-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Hasgull
+    , array >=0.5.8.0
     , base >=4.7 && <5
     , tasty
     , tasty-hunit
@@ -75,6 +76,7 @@ test-suite Hasgull-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Hasgull
+    , array >=0.5.8.0
     , base >=4.7 && <5
     , tasty
     , tasty-hunit

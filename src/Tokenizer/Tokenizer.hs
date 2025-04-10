@@ -8,6 +8,8 @@ import Data.Char
 import Text.Read
 import Tokenizer.Token (Token(..))
 
+
+
 removeComments :: String -> String
 removeComments [] = []
 removeComments ('/' : '/' : rest) = removeComments (dropWhile (/= '\n') rest)
@@ -31,6 +33,7 @@ tryReadIdentifierOrReservedWord "true" = TrueToken
 tryReadIdentifierOrReservedWord "false" = FalseToken
 tryReadIdentifierOrReservedWord "Self" = SelfToken
 tryReadIdentifierOrReservedWord "self" = LowerCaseSelfToken
+tryReadIdentifierOrReservedWord "func" = FuncToken
 tryReadIdentifierOrReservedWord "method" = MethodToken
 tryReadIdentifierOrReservedWord "break" = BreakToken
 tryReadIdentifierOrReservedWord "impl" = ImplToken

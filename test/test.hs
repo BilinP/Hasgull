@@ -2,9 +2,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
+import Parser.Parser
 
 main :: IO ()
 main = defaultMain tests
+
+testParseInput :: String -> Either String Program
+testParseInput input = case tokenize input of 
+   Left error -> Left error
+   Right tokens -> Right (parseTokens tokens) 
 
 tests :: TestTree
 tests = testGroup "Tokenizer Tests"
@@ -91,4 +97,18 @@ tests = testGroup "Tokenizer Tests"
   , 
     testCase "List of Tokens are not equal if mismatched values" $
       [IdentifierToken "hi", AddToken, IntegerToken 5] == [IdentifierToken "hi", SubtractToken, IntegerToken 5] @?= False
+  ,
+    testCase "Parse a struct declaration of a integer and boolean variable" $
+     testParseInput "struct MyStruct {x: Int, y: Boolean}" @?= 
+      Right (Program 
+            [StructDefLeaf (StructDefRoot "MyStruct" 
+                [ParamRoot "x" IntType, ParamRoot "y" BooleanType])] 
+            [])
+   ,
+    testCase "Print parsed input for an if statement" $
+    case testParseInput "if (x < 10) { println(x); }" of
+        Right program -> do
+            putStrLn ("Parsed Program: " ++ show program)
+            assertBool "Parsing succeeded" True
+        Left err -> assertFailure ("Parsing failed with error: " ++ err)
   ]

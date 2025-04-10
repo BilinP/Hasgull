@@ -24,6 +24,7 @@ dependencies:
 - tasty
 - tasty-hunit
 - tasty-quickcheck
+- array >= 0.5.8.0
 
 
 ghc-options:

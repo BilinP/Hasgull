@@ -30,6 +30,7 @@ module Tokenizer.Token (
          | WhileToken 
          | ReturnToken
          | PrintLnToken 
+         | FuncToken
          | TrueToken 
          | FalseToken 
          | SelfToken 
