@@ -1,6 +1,6 @@
 import Test.Tasty
 import Test.Tasty.HUnit
-import Parser.Parser                  
+import Parser.Parser (parseFromString)                  
 import Tokenizer.Tokenizer  
 import Tokenizer.Token       
 
@@ -9,8 +9,7 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Parser Tests"
-  [ testCase "Parse integer literal" $
-      parseFromString "5" @?= Right (IntLiteral 5)
+  [ testCase "Parse single integer token as expression" $
+      parseFromString "45" @?= Right (ProgramStmt (ExpStmt (PrimaryExp (IntegerToken 42) SemiColonToken)))
 
-  ,
   ]

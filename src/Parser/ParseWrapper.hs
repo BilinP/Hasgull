@@ -5,7 +5,7 @@ import Tokenizer.Tokenizer (tokenize)
 import Parser.Expr (Program)
 
 --defined function that will tokenize and then parse
-tokenizeAndParseFromString :: String -> Either String Program
-tokenizeAndParseFromString input = do
+parseFromString :: String -> Either String Program
+parseFromString input = do
   tokens <- tokenize input
   return (parseTokens tokens)

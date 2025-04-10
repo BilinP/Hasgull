@@ -29,6 +29,7 @@ library
       Lib
       Parser.Expr
       Parser.Parser
+      Parser.ParseWrapper
       Tokenizer.Token
       Tokenizer.Tokenizer
       Type.Type
@@ -67,6 +68,7 @@ test-suite Hasgull-test
   type: exitcode-stdio-1.0
   main-is: test.hs
   other-modules:
+      ParserTests
       Paths_Hasgull
   autogen-modules:
       Paths_Hasgull
