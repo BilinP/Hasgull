@@ -78,33 +78,33 @@ programItem : structDef {StructDefLeaf $1}
 
 exp : equalsExp {Exp $1}
 
-equalsExp : lessThanExp "==" lessThanExp {Equals $1 $3 }
-          | lessThanExp "!=" lessThanExp {Equals $1 $3}
-          | lessThanExp {Equals $1}
+equalsExp : equalsExp "==" lessThanExp {Equals $1 $3 }
+          | equalsExp "!=" lessThanExp {NotEquals $1 $3}
+          | lessThanExp { $1}
 
-lessThanExp : addExp '<' addExp {LessThan $1 $3}
-            | addExp '>' addExp {LessThan $1 $3}
-            | addExp {LessThan $1}
+lessThanExp : lessThanExp '<' addExp {LessThan $1 $3}
+            | lessThanExp '>' addExp {GreaterThan $1 $3}
+            | addExp { $1 }
 
-addExp : multExp '+' multExp {Add $1 $3}
-       | multExp '-' multExp {Add $1 $3}
-       | multExp {Add $1}
+addExp : addExp '+' multExp {Add $1 $3}
+       | addExp '-' multExp {Minus $1 $3}
+       | multExp {OneAdd $1}
 
-multExp : callExp '*' callExp {Mult $1 $3}
-        | callExp '/' callExp {Mult $1 $3}
+multExp : multExp '*' callExp {Mult $1 $3}
+        | multExp '/' callExp {Div $1 $3}
         | callExp {Mult $1}
 
 
-callExp : dotExp '('exp')'{Call $1 $3} --The grammer in Hasgull has there be a commaExp, but that doesn't exist in the slightest
+callExp : callExp '('dotExp')'{Call $1 $3} --The grammer in Hasgull has there be a commaExp, but that doesn't exist in the slightest
         | dotExp {Call $1}
 
-dotExp : primaryExp '.' var {Dot $1 $3}
-       | primaryExp {Dot $1}
+dotExp : dotExp '.' var {Dot $1 $3}
+       | primaryExp {PrimaryDot $1}
 
 primaryExp : i {Int $1}
            | var {Var $1}
-           | true {True }
-           | false {False}
+           | true {BoolRoot True }
+           | false {BoolRoot False}
            | self {LowerSelf}
            | '(' exp ')' {$2}
            | new var '{' structActualParams '}' {New $1 $3}
@@ -181,44 +181,46 @@ data ProgramItem =
           deriving (Show,Eq)
 
 data Exp = Exp EqualsExp -- Hmmmm
+           deriving (Show, Eq)
 
-data EqualsExp = Equals LessThanExp LessThanExp
-            | Equals LessThanExp LessThanExp
-            | Equals LessThanExpExp
+data EqualsExp = Equals EqualsExp LessThanExp
+            | NotEquals  EqualsExp LessThanExp
+            | SingleEquals LessThanExp
             deriving(Show,Eq)
 
-data LessThan = LessThan AddExp AddExp
-              | LessThan AddExp AddExp
-              | LessThan AddExp
+data LessThanExp = LessThan LessThanExp AddExp
+              | GreaterThan LessThanExp AddExp
+              | SingleLess AddExp
               deriving(Show,Eq)
 
-data AddExp = Add MultExp MultExp
-            | Add MultExp MultExp
-            | Add MultiExp
+data AddExp = Add AddExp MultExp
+            | Minus AddExp MultExp
+            | SignleAdd MultExp
             deriving(Show,Eq)
 
-data MultExp = Mult CallExp CallExp
-             | Mult CallExp CallExp
-             | Mult CallExp
+data MultExp = Mult MultExp CallExp
+             | Divide MultExp CallExp
+             | SingleMult CallExp
              deriving(Show,Eq)
 
-data CallExp = Call DotExp Exp
-             | Call DotExp
+data CallExp = Call CallExp DotExp
+             | SingleCall DotExp
              deriving(Show,Eq)
-data DotExp = Dot PrimaryExp String 
-            | Dot PrimaryExp
-            deriving(Show,Eq)
+
+data DotExp = Dot DotExp String 
+            | PrimaryDot PrimaryExp
+             deriving(Show,Eq)
 
 data PrimaryExp = Int Int
                 | Var String
-                | True
-                | False
+                | BoolRoot Bool
                 | LowerSelf
                 | Par Exp -- IDK for the '(' exp ')' rule
-                | New String StructActualParams
+                | New String [StructActualParam]
+                deriving( Show, Eq )
 
 data StructActualParam = StructActualParamRoot String Exp
-                        deriving (Show,Eq)
+                         deriving (Show,Eq)
 
 data Stmt =
      LetStmt Param Exp
