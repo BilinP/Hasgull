@@ -1,4 +1,5 @@
 module Parser.Parser (
+   Expr(..), 
    parseExpression
 ) where
 
@@ -10,7 +11,7 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Char()
 import Data.Void
 
-type Parsec = Parsec Void [Token]
+type Parser = Parsec Void [Token]
 
 data Expr 
    =  Identifier String
@@ -56,7 +57,7 @@ isIdentifierToken _ = False
 
 --parse an integer
 pInteger :: Parser Expr
-pInteger  = Integer <$> (satisfy isIntegerToken >>= \(IntegerToken value) -> pure value)
+pInteger  = Int <$> (satisfy isIntegerToken >>= \(IntegerToken value) -> pure value)
 
 
 -- Helper to check if Token is an Integertoken
@@ -80,32 +81,13 @@ pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
 
 --Parse types
 pType :: Parser Type
-pType = (IntType <$ symbol IntToken) <|> (VoidType <$ symbol VoidToken) <|> (BooleanType <$ symbol BooleanToken)
-         <|> (SelfType <$ symbol SelfToken)
-         <!> (StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken  name)) -> pure name)
-         <!> (between (symbol LParenToken ) (symbol RParenToken ) pType)
-         <!> pHigherOrderType --Unsure of this
+pType = (IntType <$ symbol IntToken) <|> (VoidType <$ symbol VoidToken) <|> (BooleanType <$ symbol BooleanToken)  
+     
+       
 
 --Weird parser attempt for the ',' type part of commaType in the grammar
-pCommaType :: Parser Type
-pCommaType =
-        CommaType =
-        <* checkMatchingToken CommaToken 
-        <*> pType
-        
---Separate parser for the higher order type 
-pHigherOrderType :: Parser Type
-pHigherOrderType = 
-        HigherType =
-                <* checkMatchingToken LParenToken
-                <*> pType
-                <*> many pCommaType
-                <* checkMatchingToken RParenToken
-                <* checkMatchingToken ArrowToken
-                <*> pType
 
--- Parse Struct Actual Params
-pStructActParams :: Parser StructActualParam
+
 
 
 -- Helper by Angel. Should remove to pull Angel's version.
@@ -121,24 +103,24 @@ pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 pIf :: Parser Expr
 pIf = If <$> (symbol IfToken *> pCondition)
-      <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
-      <*> optional pElseOrElseIf
+         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+         <*> optional pElseOrElseIf
 
 pElseOrElseIf :: Parser Expr
 pElseOrElseIf = do
-        _ <- symbol ElseToken
-        choice 
-        [
-           If <$> (symbol IfToken *> pCondition)
-           <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
-           <*> optional pElseOrElseIf
-        ,
-           symbol LBraceToken *> pExpr <* symbol RBraceToken
-        ]
+ _ <- symbol ElseToken
+ choice 
+   [
+     If <$> (symbol IfToken *> pCondition)
+        <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+        <*> optional pElseOrElseIf
+   ,       
+      symbol LBraceToken *> pExpr <* symbol RBraceToken
+   ]
 
 pWhile :: Parser Expr
 pWhile = While <$> (symbol WhileToken *> pCondition)
-               <*> (symbol LBraceToken *> pExpr <* RBraceToken)
+               <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
 
 
 pCondition :: Parser Expr
@@ -149,12 +131,11 @@ pParenCondition = between (symbol LParenToken) (symbol RParenToken) pCondition
 
 condTerm :: Parser Expr
 condTerm = choice
-[
-   pBoolean
-,  pVariable
-,  pInteger
-,  pParenCondition
-]
+  [ pBoolean
+  , pVariable
+  , pInteger
+  , pParenCondition
+  ]
 
 condOperatorTable :: [[Operator Parser Expr]]
 condOperatorTable =
@@ -168,16 +149,15 @@ condOperatorTable =
 
 pTerm :: Parser Expr
 pTerm = choice 
-[
-   pParen,
-   pIf,
-   pWhile,
-   pReturn,
-   pPrintLn,
-   pExpr,
-   pInteger
+  [ pParens
+  , pIf
+  , pWhile
+  , pReturn
+  , pPrintLn
+  , pExpr
+  , pInteger
 
-]
+  ]
 
 pExpr :: Parser Expr
 pExpr = makeExprParser pTerm operatorTable
@@ -200,7 +180,7 @@ operatorTable =
         ]
 
 
-binary :: Token (Expr -> Expr -> Expr ) -> Operator Parser Expr
+binary :: Token -> (Expr -> Expr -> Expr ) -> Operator Parser Expr
 binary tok f = InfixL(f <$ symbol tok)
 
 prefix :: Token -> (Expr -> Expr) -> Operator Parser Expr

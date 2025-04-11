@@ -11,8 +11,7 @@ main = defaultMain tests
 tests :: TestTree
 tests = testGroup "All Tests"
       [ tokenizerTests
-         ,
-         parserTests
+      , parserTests
       ]
 tokenizerTests :: TestTree
 tokenizerTests = testGroup "Tokenizer Tests"
@@ -105,9 +104,8 @@ tokenizerTests = testGroup "Tokenizer Tests"
 
 parserTests :: TestTree
 parserTests = testGroup "Parser tests"
-  [
-    testCase " Parse Single integer " $
-    case tokenize "42" of
-      Right tokens -> parseExpression @?= Right (Int 42)
-      Left err -> assertFailure
+  [ testCase " Parse Single integer " $
+      case tokenize "42" of
+        Right tokens -> parseExpression tokens @?= Right (Int 42)
+        Left err -> assertFailure err
   ]

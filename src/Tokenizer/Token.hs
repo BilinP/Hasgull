@@ -46,4 +46,4 @@ module Tokenizer.Token (
          | IntegerToken Int
          | IdentifierToken String 
          | StructNameToken String
-          deriving (Show, Eq)
+          deriving (Show,Ord, Eq)
