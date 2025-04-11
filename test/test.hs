@@ -2,18 +2,21 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser
+import Parser.Parser (Expr(..) , parseExpression)
 
 main :: IO ()
 main = defaultMain tests
 
-testParseInput :: String -> Either String Program
-testParseInput input = case tokenize input of 
-   Left error -> Left error
-   Right tokens -> Right (parseTokens tokens) 
 
 tests :: TestTree
-tests = testGroup "Tokenizer Tests"
+tests = testGroup "All Tests"
+      [ tokenizerTests
+         ,
+         parserTests
+      ]
+tokenizerTests :: TestTree
+tokenizerTests = testGroup "Tokenizer Tests"
+
   [   
      testCase "Testing tokenization of assignment expression" $
       either assertFailure (@=? [IdentifierToken "a1", EqualToken, IntegerToken 5]) (tokenize "a1 = 5")
@@ -97,22 +100,14 @@ tests = testGroup "Tokenizer Tests"
   , 
     testCase "List of Tokens are not equal if mismatched values" $
       [IdentifierToken "hi", AddToken, IntegerToken 5] == [IdentifierToken "hi", SubtractToken, IntegerToken 5] @?= False
-  ,
-    testCase "Parse a struct declaration of a integer and boolean variable" $
-     testParseInput "struct MyStruct {x: Int, y: Boolean}" @?= 
-      Right (Program 
-            [StructDefLeaf (StructDefRoot "MyStruct" 
-                [ParamRoot "x" IntType, ParamRoot "y" BooleanType])] 
-            [])
-  ,
-    testCase "Parse a simple arithmetic expression" $
-      testParseInput "1 + 2 * 3" @?=
-      Right (Program [] 
-              [ExpStmt 
-                (AddExpRoot 
-                  (MultExpRoot (DotEXPCallExpRoot (IntRoot 1)) AddToken 
-                    (MultExpRoot 
-                      (DotEXPCallExpRoot (IntRoot 2)) MultiplyToken 
-                      (DotEXPCallExpRoot (IntRoot 3))))])
-                    
+   
+  ]
+
+parserTests :: TestTree
+parserTests = testGroup "Parser tests"
+  [
+    testCase " Parse Single integer " $
+    case tokenize "42" of
+      Right tokens -> parseExpression @?= Right (Int 42)
+      Left err -> assertFailure
   ]

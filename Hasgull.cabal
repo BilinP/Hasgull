@@ -41,6 +41,8 @@ library
   build-depends:
       array >=0.5.8.0
     , base >=4.7 && <5
+    , megaparsec
+    , parser-combinators
     , tasty
     , tasty-hunit
     , tasty-quickcheck
@@ -59,6 +61,8 @@ executable Hasgull-exe
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , megaparsec
+    , parser-combinators
     , tasty
     , tasty-hunit
     , tasty-quickcheck
@@ -78,6 +82,8 @@ test-suite Hasgull-test
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , megaparsec
+    , parser-combinators
     , tasty
     , tasty-hunit
     , tasty-quickcheck
