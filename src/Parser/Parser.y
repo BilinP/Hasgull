@@ -61,116 +61,109 @@ import Tokenizer.Token (Token(..))
 
 %%
 
---Essentially just copied our grammer straight into here, mostly following the example on the Happy website
+--Essentially just copied our grammar straight into here, mostly following the example on the Happy website
 -- NOTE: the $1 essentially the value in the production rule, they must match.
-Program : ProgramItems Stmts {Program $1 $2 }
+program : programItems stmts {Program $1 $2}
 
-ProgramItems : ProgramItem ProgramItems {$1 : $2}
-             | {- empty -} {[]}
+programItems : {- empty -} {[]}
+             | programItem programItems {$1 : $2}
 
-Stmts : Stmt Stmts {$1: $2 }
-      | {- empty -} { [] }
+stmts : {- empty -} { [] }
+      | stmt stmts {$1 : $2}
 
+programItem : structDef {StructDefLeaf $1}
+            | traitDef {TraitDefLeaf $1}
+            | implDef {ImplDefLeaf $1}
+            | funcDef {FuncDefLeaf $1}
 
+exp : equalsExp {Exp $1}
 
-ProgramItem : StructDef {StructDefLeaf $1}
-            | TraitDef {TraitDefLeaf $1 }
-            | ImplDef {ImplDefLeaf $1}
-            | FuncDef {FuncDefLeaf $1}
+equalsExp : lessThanExp "==" lessThanExp {Equals $1 $3 }
+          | lessThanExp "!=" lessThanExp {Equals $1 $3}
+          | lessThanExp {Equals $1}
 
-Exp : EqualsExp { ExpRoot $1}
+lessThanExp : addExp '<' addExp {LessThan $1 $3}
+            | addExp '>' addExp {LessThan $1 $3}
+            | addExp {LessThan $1}
 
+addExp : multExp '+' multExp {Add $1 $3}
+       | multExp '-' multExp {Add $1 $3}
+       | multExp {Add $1}
 
-Exp : Exp '==' Exp { EqualsExpRoot $1 EqualsToken $3 }
-    | Exp '!=' Exp { NotEqualsExpRoot $1 NotEqualToken $3 }
-    | Exp '<' Exp { LessThanExpRoot $1 LessThanToken $3 }
-    | Exp '>' Exp { LessThanExpRoot $1 GreaterThanToken $3 }
-    | Exp '+' Exp { AddExpRoot $1 AddToken $3 }
-    | Exp '-' Exp { AddExpRoot $1 SubtractToken $3 }
-    | Exp '*' Exp { MultExpRoot $1 MultiplyToken $3 }
-    | Exp '/' Exp { MultExpRoot $1 DivideToken $3 }
-    | Exp '(' Exp ')' {CallExpRoot $1 $3}
-    | Exp '.' var {DotExpRoot $1 $3}
-    | '(' Exp ')' { $2 }
-    | PrimaryExp { $1 }
-
-PrimaryExp:  i {IntRoot $1}
-            | var {VarRoot $1}
-            | true {BoolRoot True}
-            | false {BoolRoot False}
-            | self {LowerSelfRoot}
-            | '(' Exp ')' {ParenExpRoot $2 }
-            | new var '{' StructActualParams '}' {NewRoot $2 $4 }
-
-StructActualParams : StructActualParam ',' StructActualParams {$1 : $3}
-                    | StructActualParam {[$1]}
-                    | {- empty -} {[]}
-
-StructActualParam : var ':' Exp  {StructActualParamRoot $1 $3}
+multExp : callExp '*' callExp {Mult $1 $3}
+        | callExp '/' callExp {Mult $1 $3}
+        | callExp {Mult $1}
 
 
-Stmt : let Param '=' Exp ';' {LetStmt $2 $4}
-       | var '=' Exp ';' {AssignStmt $1 $3}
-       | if '(' Exp ')' Stmt else Stmt %prec LOWER_THAN_ELSE {IfStmt $3 $5 (Just $7)}
-       | if '(' Exp ')' Stmt  {IfStmt $3 $5 Nothing}
-       | while '(' Exp ')' Stmt {WhileStmt $3 $5}
-       | break ';' {BreakStmt}
-       | println '(' Exp ')' {PrintLnStmt $3}
-       | '{' Stmts '}' {BlockStmt $2}
-       | return Exp ';' {ReturnStmt (Just $2)}
-       | return ';' {ReturnStmt Nothing}
-       | Exp ';' {ExpStmt $1}
+callExp : dotExp '('exp')'{Call $1 $3} --The grammer in Hasgull has there be a commaExp, but that doesn't exist in the slightest
+        | dotExp {Call $1}
 
-FuncDef :  func var '(' CommaParam ')' ':' Type '{' Stmts '}' {FuncDefRoot $2 $4 $7 $9}
+dotExp : primaryExp '.' var {Dot $1 $3}
+       | primaryExp {Dot $1}
 
-ImplDef : impl var for Type '{' ConcMethodDefs '}' {ImplDefRoot $2 $4 $6}
-
-TraitDef : trait var '{' AbsMethodDefs '}' {TraitDefRoot $2 $4} --It's var because I realized we don't actually have a way for there to be a traitname token that isn't just an IdentiferToken
-ConcMethodDefs : ConcMethodDef ConcMethodDefs { $1 : $2}
-                 | {- empty -} {[]}
-ConcMethodDef : method var '(' CommaParam ')' ':' Type '{' Stmts '}' {ConcMethodDefRoot $2 $4 $7 $9}
-
-AbsMethodDefs : AbsMethodDef AbsMethodDefs {$1 : $2}
-                | {- empty -} {[]}
-
-AbsMethodDef : method var '(' CommaParam ')' ':' Type ';' {AbsMethoddefRoot $2 $4 $7}
+primaryExp : i {Int $1}
+           | var {Var $1}
+           | true {True }
+           | false {False}
+           | self {LowerSelf}
+           | '(' exp ')' {$2}
+           | new var '{' structActualParams '}' {New $1 $3}
 
 
-StructDef : struct var '{' CommaParam '}'{StructDefRoot $2 $4}
+structActualParams : {- empty -} {[]}
+                   | structActualParam {[$1]}
+                   | structActualParam ',' structActualParams {$1 : $3}
 
-CommaParam : Param ',' CommaParam {$1 : $3}
-           | Param {[$1]}
+                   
+structActualParam : var ':' exp {StructActualParamRoot $1 $3}
+
+stmt : let param '=' exp ';' {LetStmt $2 $4}
+     | var '=' exp ';' {AssignStmt $1 $3}
+     | if '(' exp ')' stmt else stmt %prec LOWER_THAN_ELSE {IfStmt $3 $5 (Just $7)}
+     | if '(' exp ')' stmt {IfStmt $3 $5 Nothing}
+     | while '(' exp ')' stmt {WhileStmt $3 $5}
+     | break ';' {BreakStmt}
+     | println '(' exp ')' {PrintLnStmt $3}
+     | '{' stmts '}' {BlockStmt $2}
+     | return exp ';' {ReturnStmt (Just $2)}
+     | return ';' {ReturnStmt Nothing}
+     | exp ';' {ExpStmt $1}
+
+funcDef : func var '(' commaParam ')' ':' type '{' stmts '}' {FuncDefRoot $2 $4 $7 $9}
+
+implDef : impl var for type '{' concMethodDefs '}' {ImplDefRoot $2 $4 $6}
+
+traitDef : trait var '{' absMethodDefs '}' {TraitDefRoot $2 $4}
+
+concMethodDefs : concMethodDef concMethodDefs { $1 : $2}
+               | {- empty -} {[]}
+
+concMethodDef : method var '(' commaParam ')' ':' type '{' stmts '}' {ConcMethodDefRoot $2 $4 $7 $9}
+
+absMethodDefs : absMethodDef absMethodDefs {$1 : $2}
+              | {- empty -} {[]}
+
+absMethodDef : method var '(' commaParam ')' ':' type ';' {AbsMethoddefRoot $2 $4 $7}
+
+structDef : struct var '{' commaParam '}' {StructDefRoot $2 $4}
+
+commaParam : param ',' commaParam {$1 : $3}
+           | param {[$1]}
            | {- empty -} {[]}
 
-Param : var ':' Type {ParamRoot $1 $3 }
+param : var ':' type {ParamRoot $1 $3}
 
-Type :  Int {IntType}
-       | Void {VoidType}
-       | Boolean {BooleanType} 
-       | Self {SelfType}
-       | '(' Type ')' {ParenthType $2}
-       | '(' CommaType ')' "=>" Type {HighOrderType $2 $5}
-       | var {StructType $1}
+type : Int {IntType}
+     | Void {VoidType}
+     | Boolean {BooleanType}
+     | Self {SelfType}
+     | '(' type ')' {ParenthType $2}
+     | '(' commaType ')' "=>" type {HighOrderType $2 $5}
+     | var {StructType $1}
 
-
-
-CommaType : Type ',' CommaType {$1 : $3}
-          | Type {[$1]}
-          | {- empty -} {[]}            
-
-             
-AddOp : '+' {AddToken}
-      | '-' {SubtractToken}
-        
-EqualsOp : "==" {EqualsToken}
-         | "!=" {NotEqualToken}
-
-LessThanOp : '<' {LessThanToken} 
-           | '>' {GreaterThanToken}
-
-MultOp : '*' {MultiplyToken}
-       | '/' {DivideToken}
-
+commaType : type ',' commaType {$1 : $3}
+          | type {[$1]}
+          | {- empty -} {[]}
 
 
 {
@@ -187,43 +180,42 @@ data ProgramItem =
         | FuncDefLeaf FuncDef
           deriving (Show,Eq)
 
-data Exp = ExpRoot EqualsExp
-          deriving(Show,Eq)
+data Exp = Exp EqualsExp -- Hmmmm
 
+data EqualsExp = Equals LessThanExp LessThanExp
+            | Equals LessThanExp LessThanExp
+            | Equals LessThanExpExp
+            deriving(Show,Eq)
 
-data EqualsExp = EqualsExpRoot LessThanExp Token LessThanExp
-             deriving (Show,Eq)
+data LessThan = LessThan AddExp AddExp
+              | LessThan AddExp AddExp
+              | LessThan AddExp
+              deriving(Show,Eq)
 
-data LessThanExp =
-    LessThanExpRoot AddExp Token AddExp
-     deriving (Show,Eq)
+data AddExp = Add MultExp MultExp
+            | Add MultExp MultExp
+            | Add MultiExp
+            deriving(Show,Eq)
 
-data AddExp =
-    AddExpRoot MultExp Token MultExp
-    deriving (Show,Eq)
+data MultExp = Mult CallExp CallExp
+             | Mult CallExp CallExp
+             | Mult CallExp
+             deriving(Show,Eq)
 
-data MultExp =
-    MultExpRoot CallExp Token CallExp
-    deriving (Show,Eq)
+data CallExp = Call DotExp Exp
+             | Call DotExp
+             deriving(Show,Eq)
+data DotExp = Dot PrimaryExp String 
+            | Dot PrimaryExp
+            deriving(Show,Eq)
 
-data CallExp =
-     CallExpRoot DotExp DotExp
-   | DotEXPCallExpRoot DotExp
-    deriving (Show,Eq)
-
-data DotExp =
-    DotExpRoot PrimaryExp Token PrimaryExp
-    deriving (Show,Eq)
-
-data PrimaryExp =
-     IntRoot Int
-   | VarRoot String
-   | BoolRoot Bool
-   | ParenExpRoot Exp
-   | LowerSelfRoot
-   | NewRoot String [StructActualParam]
-   deriving (Show,Eq)
-
+data PrimaryExp = Int Int
+                | Var String
+                | True
+                | False
+                | LowerSelf
+                | Par Exp -- IDK for the '(' exp ')' rule
+                | New String StructActualParams
 
 data StructActualParam = StructActualParamRoot String Exp
                         deriving (Show,Eq)
