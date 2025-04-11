@@ -24,6 +24,8 @@ dependencies:
 - tasty
 - tasty-hunit
 - tasty-quickcheck
+- megaparsec
+- parser-combinators
 
 
 ghc-options:

@@ -2,12 +2,19 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
+import Parser.Parser (Expr(..), parseExpression)
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tokenizer Tests"
+tests = testGroup "All Tests"
+  [ tokenizerTests
+  , parserTests
+  ]
+
+tokenizerTests :: TestTree
+tokenizerTests = testGroup "Tokenizer Tests"
   [   
      testCase "Testing tokenization of assignment expression" $
       either assertFailure (@=? [IdentifierToken "a1", EqualToken, IntegerToken 5]) (tokenize "a1 = 5")
@@ -91,4 +98,44 @@ tests = testGroup "Tokenizer Tests"
   , 
     testCase "List of Tokens are not equal if mismatched values" $
       [IdentifierToken "hi", AddToken, IntegerToken 5] == [IdentifierToken "hi", SubtractToken, IntegerToken 5] @?= False
+  ]
+
+parserTests :: TestTree
+parserTests = testGroup "Parser Tests"
+  [ testCase "Parse single integer" $
+      case tokenize "42" of
+        Right tokens -> parseExpression tokens @?= Right (Int 42)
+        Left err -> assertFailure err
+  , testCase "Parse single variable" $
+      case tokenize "x" of
+        Right tokens -> parseExpression tokens @?= Right (Var "x")
+        Left err -> assertFailure err
+  , testCase "Parse negation" $
+      case tokenize "-5" of
+        Right tokens -> parseExpression tokens @?= Right (Negation (Int 5))
+        Left err -> assertFailure err
+  , testCase "Parse addition" $
+      case tokenize "-3 + 4" of
+        Right tokens -> parseExpression tokens @?= Right (Sum (Negation (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse mixed addition and multiplication" $
+      case tokenize "2 + 3 * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Sum (Int 2) (Product (Int 3) (Int 4)))
+        Left err -> assertFailure err
+  , testCase "Parse parentheses with multiplication" $
+      case tokenize "(2 + 3) * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Product (Sum (Int 2) (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse division" $
+      case tokenize "10 / 2" of
+        Right tokens -> parseExpression tokens @?= Right (Division (Int 10) (Int 2))
+        Left err -> assertFailure err
+  , testCase "Parse subtraction" $
+      case tokenize "7 - 3" of
+        Right tokens -> parseExpression tokens @?= Right (Sub (Int 7) (Int 3))
+        Left err -> assertFailure err
+  , testCase "Parse complex expression with variables" $
+      case tokenize "(x + 1) * 2" of
+        Right tokens -> parseExpression tokens @?= Right (Product (Sum (Var "x") (Int 1)) (Int 2))
+        Left err -> assertFailure err
   ]
