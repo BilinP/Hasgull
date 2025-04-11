@@ -104,11 +104,15 @@ tests = testGroup "Tokenizer Tests"
             [StructDefLeaf (StructDefRoot "MyStruct" 
                 [ParamRoot "x" IntType, ParamRoot "y" BooleanType])] 
             [])
-   ,
-    testCase "Print parsed input for an if statement" $
-    case testParseInput "if (x < 10) { println(x); }" of
-        Right program -> do
-            putStrLn ("Parsed Program: " ++ show program)
-            assertBool "Parsing succeeded" True
-        Left err -> assertFailure ("Parsing failed with error: " ++ err)
+  ,
+    testCase "Parse a simple arithmetic expression" $
+      testParseInput "1 + 2 * 3" @?=
+      Right (Program [] 
+              [ExpStmt 
+                (AddExpRoot 
+                  (MultExpRoot (DotEXPCallExpRoot (IntRoot 1)) AddToken 
+                    (MultExpRoot 
+                      (DotEXPCallExpRoot (IntRoot 2)) MultiplyToken 
+                      (DotEXPCallExpRoot (IntRoot 3))))])
+                    
   ]
