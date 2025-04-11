@@ -108,23 +108,23 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse single variable" $
       case tokenize "x" of
-        Right tokens -> parseExpression tokens @?= Right (Var "x")
+        Right tokens -> parseExpression tokens @?= Right (Identifier "x")
         Left err -> assertFailure err
-  , testCase "Parse negation" $
+  , testCase "Parse Negative" $
       case tokenize "-5" of
-        Right tokens -> parseExpression tokens @?= Right (Negation (Int 5))
+        Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
         Left err -> assertFailure err
   , testCase "Parse addition" $
       case tokenize "-3 + 4" of
-        Right tokens -> parseExpression tokens @?= Right (Sum (Negation (Int 3)) (Int 4))
+        Right tokens -> parseExpression tokens @?= Right (Add (Negative (Int 3)) (Int 4))
         Left err -> assertFailure err
   , testCase "Parse mixed addition and multiplication" $
       case tokenize "2 + 3 * 4" of
-        Right tokens -> parseExpression tokens @?= Right (Sum (Int 2) (Product (Int 3) (Int 4)))
+        Right tokens -> parseExpression tokens @?= Right (Add (Int 2) (Multiply (Int 3) (Int 4)))
         Left err -> assertFailure err
   , testCase "Parse parentheses with multiplication" $
       case tokenize "(2 + 3) * 4" of
-        Right tokens -> parseExpression tokens @?= Right (Product (Sum (Int 2) (Int 3)) (Int 4))
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Int 2) (Int 3)) (Int 4))
         Left err -> assertFailure err
   , testCase "Parse division" $
       case tokenize "10 / 2" of
@@ -136,6 +136,30 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse complex expression with variables" $
       case tokenize "(x + 1) * 2" of
-        Right tokens -> parseExpression tokens @?= Right (Product (Sum (Var "x") (Int 1)) (Int 2))
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
         Left err -> assertFailure err
+  , testCase "Parse return statement" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "return 42")) @?= Right (Return (Int 42))
+  , testCase "Parse println statement" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "println x")) @?= Right (PrintLn (Identifier "x"))
+  , testCase "Parse if expression without else" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "if x { y }")) @?= Right (If (Identifier "x") (Identifier "y") Nothing)
+   , testCase "Parse if expression without else" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "if (x > y) {y}")) @?= Right (If (GreaterThan (Identifier "x") (Identifier "y")) (Identifier "y") Nothing)
+  , testCase "Parse if expression with else" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "if x { y } else { z }")) @?= Right (If (Identifier "x") (Identifier "y") (Just (Identifier "z")))
+  , testCase "Parse while loop" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "while (x>y) { y }")) @?= Right (While (GreaterThan (Identifier "x") (Identifier "y")) (Identifier "y"))
+    , testCase "Parse while loop" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "while (x>y) { y }")) @?= Right (While (GreaterThan (Identifier "x") (Identifier "y")) (Identifier "y"))
+    ,testCase "" $
+      parseExpression (either (error "Tokenization failed") id (tokenize "while (x>y) { y }")) @?= Right (While (GreaterThan (Identifier "x") (Identifier "y")) (Identifier "y"))
+  , testCase "Parse equals expression" $
+      case tokenize "x == y" of
+        Right tokens -> parseExpression tokens @?= Right (Equals (Identifier "x") (Identifier "y"))
+        Left err -> assertFailure err
+  , testCase "Parse int x = 1 assignment" $
+      case tokenize "int x = 1" of
+          Right tokens -> parseExpression tokens @?= Right (Equals (Identifier "x") (Identifier "y"))
+          Left err -> assertFailure err
   ]

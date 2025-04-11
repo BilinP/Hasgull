@@ -1,4 +1,3 @@
-
 module Parser.Parser (
   Expr(..),
   parseExpression
@@ -7,7 +6,7 @@ module Parser.Parser (
 import Tokenizer.Token (Token(..))
 import Control.Monad.Combinators.Expr
 import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
-import Text.Megaparsec.Char
+import Text.Megaparsec.Char()
 import Data.Void
 
 -- Define the parser type
@@ -15,49 +14,124 @@ type Parser = Parsec Void [Token]
 
 -- Define the expression data type
 data Expr
-  = Var String
+  = Identifier String
   | Int Int
-  | Negation Expr
-  | Sum Expr Expr
+  | Negative Expr
+  | Add Expr Expr
   | Sub Expr Expr
-  | Product Expr Expr
+  | Multiply Expr Expr
   | Division Expr Expr
+  | If Expr Expr (Maybe Expr) 
+  | While Expr Expr          
+  | Equals Expr Expr         
+  | NotEquals Expr Expr      
+  | GreaterThan Expr Expr     
+  | LessThan Expr Expr                 
+  | Return Expr               
+  | PrintLn Expr              
   deriving (Eq, Ord, Show)
 
 -- Parse a variable
 pVariable :: Parser Expr
-pVariable = do
-  token <- satisfy isIdentifierToken
-  case token of
-    IdentifierToken name -> return (Var name)
-    _ -> fail "Expected an identifier"
+pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
 
--- Parse an integer
-pInteger :: Parser Expr
-pInteger = do
-  token <- satisfy isIntegerToken
-  case token of
-    IntegerToken value -> return (Int value)
-    _ -> fail "Expected an integer"
-
--- Helper to check if a token is an identifier
 isIdentifierToken :: Token -> Bool
 isIdentifierToken (IdentifierToken _) = True
 isIdentifierToken _ = False
 
--- Helper to check if a token is an integer
+
+-- Parse an integer
+pInteger :: Parser Expr
+pInteger = Int <$> (satisfy isIntegerToken >>= \(IntegerToken value) -> pure value)
+
 isIntegerToken :: Token -> Bool
 isIntegerToken (IntegerToken _) = True
 isIntegerToken _ = False
+
+
+
+---------------------------------------------------------------------------
+pAtom :: Parser Expr
+pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
+
+pParensAtom :: Parser Expr
+pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
+
+pReturn :: Parser Expr
+pReturn = Return <$> (symbol ReturnToken *> pAtom)
+
+pPrintLn :: Parser Expr
+pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
+---------------------------------------------------------------------------
+
+
+
+-- Parse a boolean literal
+pBoolean :: Parser Expr
+pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ symbol FalseToken)
+
 
 -- Parse parentheses
 pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
--- Parse a term
+-- Parse an if expression
+pIf :: Parser Expr
+pIf = If <$> (symbol IfToken *> pCondition)
+         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+         <*> optional pElseOrElseIf
+
+-- Parse an else or else if block #quirk 
+pElseOrElseIf :: Parser Expr
+pElseOrElseIf = do
+  _ <- symbol ElseToken
+  choice
+    [ 
+      If <$> (symbol IfToken *> pCondition)
+         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+         <*> optional pElseOrElseIf
+    , 
+      symbol LBraceToken *> pExpr <* symbol RBraceToken
+    ]
+
+-- Parse a while expression
+pWhile :: Parser Expr
+pWhile = While <$> (symbol WhileToken *> pCondition)
+               <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+
+-- Parse a condition (boolean or comparison expression)
+pCondition :: Parser Expr
+pCondition = makeExprParser condTerm condOperatorTable
+
+-- Parse conditions enclosed in parentheses
+pParensCondition :: Parser Expr
+pParensCondition = between (symbol LParenToken) (symbol RParenToken) pCondition
+
+condTerm :: Parser Expr
+condTerm = choice
+  [ pBoolean
+  , pVariable
+  , pInteger
+  , pParensCondition
+  ]
+
+condOperatorTable :: [[Operator Parser Expr]]
+condOperatorTable =
+  [ [ binary EqualsToken Equals
+    , binary NotEqualToken NotEquals
+    , binary GreaterThanToken GreaterThan
+    , binary LessThanToken LessThan
+    ]
+  ]
+
+
 pTerm :: Parser Expr
 pTerm = choice
   [ pParens
+  , pIf
+  , pWhile
+  , pReturn
+  , pPrintLn
   , pVariable
   , pInteger
   ]
@@ -66,15 +140,20 @@ pTerm = choice
 pExpr :: Parser Expr
 pExpr = makeExprParser pTerm operatorTable
 
--- Define the operator table
+-- TABLE
 operatorTable :: [[Operator Parser Expr]]
 operatorTable =
-  [ [ prefix SubtractToken Negation ]
-  , [ binary MultiplyToken Product
+  [ [ prefix SubtractToken Negative ]
+  , [ binary MultiplyToken Multiply
     , binary DivideToken Division
     ]
-  , [ binary AddToken Sum
+  , [ binary AddToken Add
     , binary SubtractToken Sub
+    ]
+  , [ binary EqualsToken Equals
+    , binary NotEqualToken NotEquals
+    , binary GreaterThanToken GreaterThan
+    , binary LessThanToken LessThan
     ]
   ]
 
@@ -93,5 +172,3 @@ symbol t = satisfy (== t)
 -- Entry point for parsing expressions
 parseExpression :: [Token] -> Either (ParseErrorBundle [Token] Void) Expr
 parseExpression = runParser pExpr ""
-
-
