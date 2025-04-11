@@ -14,7 +14,7 @@ import Data.Void
 type Parser = Parsec Void [Token]
 
 data Expr 
-   =  Identifier String
+   = Identifier String
    | Int Int
    | Negative Expr
    | Add Expr Expr

@@ -103,9 +103,41 @@ tokenizerTests = testGroup "Tokenizer Tests"
   ]
 
 parserTests :: TestTree
-parserTests = testGroup "Parser tests"
-  [ testCase " Parse Single integer " $
+parserTests = testGroup "Parser Tests"
+  [ testCase "Parse single integer" $
       case tokenize "42" of
         Right tokens -> parseExpression tokens @?= Right (Int 42)
+        Left err -> assertFailure err
+  , testCase "Parse single variable" $
+      case tokenize "x" of
+        Right tokens -> parseExpression tokens @?= Right (Identifier "x")
+        Left err -> assertFailure err
+  , testCase "Parse negation" $
+      case tokenize "-5" of
+        Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
+        Left err -> assertFailure err
+  , testCase "Parse addition" $
+      case tokenize "-3 + 4" of
+        Right tokens -> parseExpression tokens @?= Right (Add (Negative (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse mixed addition and multiplication" $
+      case tokenize "2 + 3 * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Add (Int 2) (Multiply (Int 3) (Int 4)))
+        Left err -> assertFailure err
+  , testCase "Parse parentheses with multiplication" $
+      case tokenize "(2 + 3) * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Int 2) (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse division" $
+      case tokenize "10 / 2" of
+        Right tokens -> parseExpression tokens @?= Right (Division (Int 10) (Int 2))
+        Left err -> assertFailure err
+  , testCase "Parse subtraction" $
+      case tokenize "7 - 3" of
+        Right tokens -> parseExpression tokens @?= Right (Sub (Int 7) (Int 3))
+        Left err -> assertFailure err
+  , testCase "Parse complex expression with variables" $
+      case tokenize "(x + 1) * 2" of
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
         Left err -> assertFailure err
   ]
