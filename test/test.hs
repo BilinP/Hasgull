@@ -2,12 +2,20 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
+import Parser.Parser (Expr(..) ,Type(..) ,parseExpression, parseType)
 
 main :: IO ()
 main = defaultMain tests
 
+
 tests :: TestTree
-tests = testGroup "Tokenizer Tests"
+tests = testGroup "All Tests"
+      [ tokenizerTests
+      , parserTests
+      ]
+      
+tokenizerTests :: TestTree
+tokenizerTests = testGroup "Tokenizer Tests"
   [   
      testCase "Testing tokenization of assignment expression" $
       either assertFailure (@=? [IdentifierToken "a1", EqualToken, IntegerToken 5]) (tokenize "a1 = 5")
@@ -91,4 +99,83 @@ tests = testGroup "Tokenizer Tests"
   , 
     testCase "List of Tokens are not equal if mismatched values" $
       [IdentifierToken "hi", AddToken, IntegerToken 5] == [IdentifierToken "hi", SubtractToken, IntegerToken 5] @?= False
+   
+  ]
+
+parserTests :: TestTree
+parserTests = testGroup "Parser Tests"
+  [ testCase "Parse single integer" $
+      case tokenize "42" of
+        Right tokens -> parseExpression tokens @?= Right (Int 42)
+        Left err -> assertFailure err
+  , testCase "Parse single variable" $
+      case tokenize "x" of
+        Right tokens -> parseExpression tokens @?= Right (Identifier "x")
+        Left err -> assertFailure err
+  , testCase "Parse negation" $
+      case tokenize "-5" of
+        Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
+        Left err -> assertFailure err
+  , testCase "Parse addition" $
+      case tokenize "-3 + 4" of
+        Right tokens -> parseExpression tokens @?= Right (Add (Negative (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse mixed addition and multiplication" $
+      case tokenize "2 + 3 * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Add (Int 2) (Multiply (Int 3) (Int 4)))
+        Left err -> assertFailure err
+  , testCase "Parse parentheses with multiplication" $
+      case tokenize "(2 + 3) * 4" of
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Int 2) (Int 3)) (Int 4))
+        Left err -> assertFailure err
+  , testCase "Parse division" $
+      case tokenize "10 / 2" of
+        Right tokens -> parseExpression tokens @?= Right (Division (Int 10) (Int 2))
+        Left err -> assertFailure err
+  , testCase "Parse subtraction" $
+      case tokenize "7 - 3" of
+        Right tokens -> parseExpression tokens @?= Right (Sub (Int 7) (Int 3))
+        Left err -> assertFailure err
+  , testCase "Parse complex expression with variables" $
+      case tokenize "(x + 1) * 2" of
+        Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
+        Left err -> assertFailure err
+  , testCase "Parse type Int" $
+      case tokenize "Int" of
+        Right tokens -> parseType tokens @?= Right IntType
+        Left err -> assertFailure err
+  , testCase "Parse type Void" $
+      case tokenize "Void" of
+        Right tokens -> parseType tokens @?= Right VoidType
+        Left err -> assertFailure err
+  , testCase "Parse type Boolean" $
+      case tokenize "Boolean" of
+        Right tokens -> parseType tokens @?= Right BooleanType
+        Left err -> assertFailure err
+  , testCase "Parse type Self" $
+      case tokenize "Self" of
+        Right tokens -> parseType tokens @?= Right SelfType
+        Left err -> assertFailure err
+  , testCase "Parse type StructName" $
+      case tokenize "car" of
+        Right tokens -> parseType tokens @?= Right (StructName "car")
+        Left err -> assertFailure err
+  , testCase "Parse types inside Parenthesis" $
+      case tokenize "(Int)" of
+        Right tokens -> parseType tokens @?= Right IntType
+        Left err -> assertFailure err
+  , testCase "Parse higher order function with only one type inside Parenthesis" $
+      case tokenize "(Int, Boolean)" of
+        Right tokens -> parseType tokens @?= Right (CommaType (IntType) (BooleanType)) 
+        Left err -> assertFailure err
+  , testCase "Parse commaType with three types" $
+      case tokenize "(Int, Int, Int)" of
+        Right tokens -> parseType tokens @?= Right (CommaType ( CommaType (IntType) (IntType )) (IntType))
+        Left err -> assertFailure err
+  , testCase "Parse Higher Order Types with one type" $
+      case tokenize "(Int) => Int" of
+        Right tokens -> parseType tokens @?= Right (HigherType (IntType) (IntType))
+  , testCase "Parse Higher Order Types with two types" $
+      case tokenize "(Int, Int) => Int" of
+        Right tokens -> parseType tokens @?= Right (HigherType (CommaType (IntType) (IntType )) (IntType))
   ]

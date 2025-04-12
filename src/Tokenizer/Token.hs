@@ -21,6 +21,7 @@ module Tokenizer.Token (
          | ColonToken 
          | ArrowToken 
          | SemiColonToken 
+         | DotToken
          |IntToken 
          | VoidToken 
          | BooleanToken 
@@ -29,6 +30,7 @@ module Tokenizer.Token (
          | WhileToken 
          | ReturnToken
          | PrintLnToken 
+         | FuncToken
          | TrueToken 
          | FalseToken 
          | SelfToken 
@@ -44,4 +46,4 @@ module Tokenizer.Token (
          | IntegerToken Int
          | IdentifierToken String 
          | StructNameToken String
-          deriving (Show, Eq)
+          deriving (Eq,Ord, Show)

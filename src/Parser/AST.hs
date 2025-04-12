@@ -1,8 +1,8 @@
 module AST where
 
 data TraitDef = TraitDef
-  { tName    :: String
-  , tMethods :: [AbsMethodDef]
+  { traitName    :: String
+  , traitAbsMethodDef :: [AbsMethodDef]
   } deriving (Show, Eq)
 
 data AbsMethodDef = AbsMethodDef
