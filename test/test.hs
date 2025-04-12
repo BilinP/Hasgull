@@ -2,7 +2,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser (Expr(..) , parseExpression)
+import Parser.Parser (Expr(..) ,Type(..) ,parseExpression, parseType)
 
 main :: IO ()
 main = defaultMain tests
@@ -13,9 +13,9 @@ tests = testGroup "All Tests"
       [ tokenizerTests
       , parserTests
       ]
+      
 tokenizerTests :: TestTree
 tokenizerTests = testGroup "Tokenizer Tests"
-
   [   
      testCase "Testing tokenization of assignment expression" $
       either assertFailure (@=? [IdentifierToken "a1", EqualToken, IntegerToken 5]) (tokenize "a1 = 5")
@@ -139,5 +139,29 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse complex expression with variables" $
       case tokenize "(x + 1) * 2" of
         Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
+        Left err -> assertFailure err
+  , testCase "Parse type Int" $
+      case tokenize "Int" of
+        Right tokens -> parseType tokens @?= Right IntType
+        Left err -> assertFailure err
+  , testCase "Parse type Void" $
+      case tokenize "Void" of
+        Right tokens -> parseType tokens @?= Right VoidType
+        Left err -> assertFailure err
+  , testCase "Parse type Boolean" $
+      case tokenize "Boolean" of
+        Right tokens -> parseType tokens @?= Right BooleanType
+        Left err -> assertFailure err
+  , testCase "Parse type Self" $
+      case tokenize "Self" of
+        Right tokens -> parseType tokens @?= Right SelfType
+        Left err -> assertFailure err
+  , testCase "Parse type StructName" $
+      case tokenize "car" of
+        Right tokens -> parseType tokens @?= Right (StructName "car")
+        Left err -> assertFailure err
+  , testCase "Parse types inside Parenthesis" $
+      case tokenize "(Int)" of
+        Right tokens -> parseType tokens @?= Right IntType
         Left err -> assertFailure err
   ]
