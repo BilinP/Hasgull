@@ -164,4 +164,18 @@ parserTests = testGroup "Parser Tests"
       case tokenize "(Int)" of
         Right tokens -> parseType tokens @?= Right IntType
         Left err -> assertFailure err
+  , testCase "Parse higher order function with only one type inside Parenthesis" $
+      case tokenize "(Int, Boolean)" of
+        Right tokens -> parseType tokens @?= Right (CommaType (IntType) (BooleanType)) 
+        Left err -> assertFailure err
+  , testCase "Parse commaType with three types" $
+      case tokenize "(Int, Int, Int)" of
+        Right tokens -> parseType tokens @?= Right (CommaType ( CommaType (IntType) (IntType )) (IntType))
+        Left err -> assertFailure err
+  , testCase "Parse Higher Order Types with one type" $
+      case tokenize "(Int) => Int" of
+        Right tokens -> parseType tokens @?= Right (HigherType (IntType) (IntType))
+  , testCase "Parse Higher Order Types with two types" $
+      case tokenize "(Int, Int) => Int" of
+        Right tokens -> parseType tokens @?= Right (HigherType (CommaType (IntType) (IntType )) (IntType))
   ]

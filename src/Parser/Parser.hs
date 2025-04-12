@@ -7,6 +7,7 @@ module Parser.Parser (
 
 import Tokenizer.Token (Token(..))
 import Control.Monad.Combinators.Expr
+import Control.Applicative
 import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
@@ -39,6 +40,8 @@ data Type
   | BooleanType
   | SelfType
   | StructName String
+  | CommaType Type Type -- ?
+  | HigherType Type Type
   deriving(Eq, Ord, Show)
 -- Parse a variable
 pVariable :: Parser Expr
@@ -77,9 +80,43 @@ pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
 --- Parse type literals
 
 pType :: Parser Type
-pType = (IntType <$ symbol IntToken) <|> (VoidType <$ symbol VoidToken) <|> (BooleanType <$ symbol BooleanToken) 
-         <|> (SelfType <$ symbol SelfToken) <|> (StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name))
-         <|> (between (symbol LParenToken) (symbol RParenToken) pType)
+pType = makeExprParser pTypeTerm operatingTableType
+
+pIntType :: Parser Type
+pIntType = IntType <$ symbol IntToken 
+
+pVoidType :: Parser Type
+pVoidType = VoidType <$ symbol VoidToken
+
+pBooleanType :: Parser Type
+pBooleanType = BooleanType <$ symbol BooleanToken
+
+pSelfType :: Parser Type
+pSelfType = SelfType <$ symbol SelfToken
+
+pStructname :: Parser Type
+pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+
+pParenType :: Parser Type
+pParenType = between (symbol LParenToken) (symbol RParenToken) pType
+
+pTypeTerm :: Parser Type
+pTypeTerm = choice 
+   [ pIntType
+   , pVoidType
+   , pBooleanType
+   , pSelfType
+   , pStructname
+   , pParenType
+   ]
+
+operatingTableType :: [[Operator Parser Type]]
+operatingTableType =
+  [
+     [commaType CommaToken CommaType
+     ,commaType ArrowToken HigherType
+     ]
+  ]
 
 -- Parse a boolean literal
 pBoolean :: Parser Expr
@@ -175,6 +212,9 @@ operatorTable =
 -- Helper for binary operators
 binary :: Token -> (Expr -> Expr -> Expr) -> Operator Parser Expr
 binary tok f = InfixL (f <$ symbol tok)
+
+commaType :: Token -> (Type -> Type -> Type) -> Operator Parser Type
+commaType tok f = InfixL (f <$ symbol tok)
 
 -- Helper for prefix operators
 prefix :: Token -> (Expr -> Expr) -> Operator Parser Expr
