@@ -2,7 +2,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser (Expr(..) ,Type(..) ,parseExpression, parseType)
+import Parser.Parser (Expr(..) ,Type(..), Param(..), Stmt(..) ,parseExpression, parseType, parseParam, parseStmt)
 
 main :: IO ()
 main = defaultMain tests
@@ -178,4 +178,27 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse Higher Order Types with two types" $
       case tokenize "(Int, Int) => Int" of
         Right tokens -> parseType tokens @?= Right (HigherType (CommaType (IntType) (IntType )) (IntType))
+        Left err -> assertFailure err
+  , testCase "Parse params" $
+      case tokenize ("a1: Int") of
+        Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType) )
+        Left err -> assertFailure err
+  , testCase "Parse LetStmt" $
+      case tokenize ("let a1: Int = 5;") of
+        Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
+  , testCase "Parse AssignStmt" $
+      case tokenize ("a1 = 5;") of
+        Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
+        Left err -> assertFailure err
+  , testCase "Parse BreakStmt" $
+      case tokenize ("break;") of
+        Right tokens -> parseStmt tokens @?= Right (BreakStmt)
+        Left err -> assertFailure err
+  , testCase "Parse ExprStmt" $
+      case tokenize (" 5+5;") of
+        Right tokens -> parseStmt tokens @?= Right (ExprStmt (Add (Int 5) (Int 5)))
+        Left err -> assertFailure err
+  , testCase "Parse a Block Stmt" $
+      case tokenize ("{a1 = 5}") of
+        Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
   ]

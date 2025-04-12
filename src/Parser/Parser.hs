@@ -1,8 +1,12 @@
 module Parser.Parser (
   Expr(..),
   Type(..),
+  Param(..),
+  Stmt(..),
   parseExpression,
-  parseType
+  parseType,
+  parseParam,
+  parseStmt
 ) where
 
 import Tokenizer.Token (Token(..))
@@ -34,6 +38,14 @@ data Expr
   | PrintLn Expr              
   deriving (Eq, Ord, Show)
 
+data Stmt 
+  = LetStmt Param Expr
+  | AssgStmt Expr Expr
+  | BreakStmt
+  | ExprStmt Expr 
+  
+  deriving(Eq, Ord, Show)
+
 data Type 
   = IntType
   | VoidType
@@ -43,6 +55,12 @@ data Type
   | CommaType Type Type -- ?
   | HigherType Type Type
   deriving(Eq, Ord, Show)
+
+
+data Param 
+  = Param String Type
+  deriving(Eq, Ord, Show)
+
 -- Parse a variable
 pVariable :: Parser Expr
 pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
@@ -117,6 +135,45 @@ operatingTableType =
      ,commaType ArrowToken HigherType
      ]
   ]
+
+------------------------------------------------------
+
+
+pParam :: Parser Param
+pParam = Param
+        <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+        <* symbol ColonToken
+        <*> pType
+       
+
+
+--- Parse Statements
+pLetStmt :: Parser Stmt
+pLetStmt = LetStmt <$> (symbol LetToken *> pParam)
+                   <*> (symbol EqualToken *> pExpr <* symbol SemiColonToken)
+
+pAssgStmt :: Parser Stmt
+pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
+                     <*> (pExpr <* symbol SemiColonToken)
+
+pExprStmt :: Parser Stmt
+pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
+
+pBlockStmt :: Parser Stmt
+pBlockStmt = (symbol LBraceToken *> pStmt <* symbol RBraceToken)
+
+pBreakStmt :: Parser Stmt
+pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
+
+pStmt :: Parser Stmt
+pStmt = choice 
+         [
+           pLetStmt,
+           pAssgStmt,
+           pExprStmt,
+           pBreakStmt,
+           pBlockStmt
+         ]
 
 -- Parse a boolean literal
 pBoolean :: Parser Expr
@@ -216,6 +273,9 @@ binary tok f = InfixL (f <$ symbol tok)
 commaType :: Token -> (Type -> Type -> Type) -> Operator Parser Type
 commaType tok f = InfixL (f <$ symbol tok)
 
+commaParam :: Token -> (Param -> Param -> Param) -> Operator Parser Param
+commaParam tok f = InfixL (f <$ symbol tok)
+
 -- Helper for prefix operators
 prefix :: Token -> (Expr -> Expr) -> Operator Parser Expr
 prefix tok f = Prefix (f <$ symbol tok)
@@ -230,3 +290,9 @@ parseExpression = runParser pExpr ""
 
 parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
+
+parseParam :: [Token] -> Either (ParseErrorBundle [Token] Void ) Param
+parseParam = runParser pParam ""
+
+parseStmt :: [Token] -> Either (ParseErrorBundle [Token] Void) Stmt
+parseStmt = runParser pStmt ""
