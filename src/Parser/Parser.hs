@@ -38,3 +38,57 @@ parseAbsMethodDef =
     --THIS IS JUST PLACEHOLDER UNTIL type Parser  function is brought in
     <*> parseTypeDef
     <* checkMatchingToken SemiColonToken
+
+
+-- Structdef parser
+-- structdef ::= `struct` structname `{` comma_param `}`
+parseStructDef :: Parser StructDef
+parseStructDef =
+  StructDef
+    <$ checkMatchingToken StructToken
+    -- Hold it as a StructName type within the Grammar, go back to this, may need to be changed
+    <*> isIdentifierToken
+    <* checkMatchingToken LBraceToken
+    -- THIS PARSER STILL NEEDS TO BE DEFINED
+    <*> parseCommaParam
+    <* checkMatchingToken RBraceToken
+
+-- ImplDef Parser
+-- impldef ::= `impl` traitname `for` type `{` conc_methoddef* `}`
+parseImplDef :: Parser ImplDef
+parseImplDef =
+  ImplDef
+    <$ checkMatchingToken ImplToken
+    <*> isIdentifierToken
+    <* checkMatchingToken ForToken
+    --THIS IS JUST PLACEHOLDER UNTIL type Parser function is brought in
+    <*> parseTypeDef
+    <* checkMatchingToken LBraceToken
+    -- THIS PARSER STILL NEEDS TO BE DEFINED
+    <*> many parseConcMethodDef
+    <* checkMatchingToken RBraceToken
+
+-- FuncDef Parser
+-- funcdef ::= `func` var `(` comma_param `)` `:` type `{` stmt* `}`
+parseFuncDef :: Parser FuncDef
+parseFuncDef =
+  FuncDef
+    --REMIND myself to make FuncToken 
+    <$ checkMatchingToken FuncToken
+    --Probably want to be saved as VariableType?
+    <*> IdentifierToken
+    <* checkMatchingToken LParenToken
+    <*> parseCommaParam
+    <* checkMatchingToken RParenToken
+    <* checkMatchingToken ColonToken
+    -- PLACEHOLDER until Parse type checker is imported
+    <*> parseTypeDef
+    <* checkMatchingToken LBraceToken
+    -- PLACEHOLDER until parseStatement is brought in
+    <*> many parseStatment
+    <* checkMatchingToken RBraceToken
+
+
+
+
+
