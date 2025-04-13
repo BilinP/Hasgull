@@ -11,7 +11,7 @@ module Parser.Parser (
 
 import Tokenizer.Token (Token(..))
 import Control.Monad.Combinators.Expr
-import Control.Applicative
+-- import Control.Applicative
 import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
@@ -42,8 +42,8 @@ data Stmt
   = LetStmt Param Expr
   | AssgStmt Expr Expr
   | BreakStmt
+  | BlockStmt [Stmt]
   | ExprStmt Expr 
-  
   deriving(Eq, Ord, Show)
 
 data Type 
@@ -52,13 +52,14 @@ data Type
   | BooleanType
   | SelfType
   | StructName String
-  | CommaType Type Type -- ?
-  | HigherType Type Type
+  | CommaType Type [Type] -- ?
+  | HigherOrderType Type Type
   deriving(Eq, Ord, Show)
 
 
 data Param 
   = Param String Type
+  | CommaParam Param [Param]
   deriving(Eq, Ord, Show)
 
 -- Parse a variable
@@ -98,7 +99,32 @@ pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
 --- Parse type literals
 
 pType :: Parser Type
-pType = makeExprParser pTypeTerm operatingTableType
+pType = try pFunctionType <|> pAtomType -- Try if it's a higher order type, backtrack and try the other parse if not
+
+pAtomType :: Parser Type
+pAtomType = choice 
+   [ pIntType
+   , pVoidType
+   , pBooleanType
+   , pSelfType
+   , pStructname
+   , pParenType
+   ]
+
+pFunctionType :: Parser Type
+pFunctionType = do
+  arg <- between (symbol LParenToken) (symbol RParenToken) pArgType --Argument of the higher order function
+  symbol ArrowToken 
+  result <- pType
+  return $ HigherOrderType arg result -- Bind the HigherOrder Type with the argument and the resulting type
+
+pArgType :: Parser Type
+pArgType = do
+  firstArg <- pAtomType --Get the single,guranteed type
+  restArgs <- many (symbol CommaToken *> pAtomType)
+  case restArgs of
+    [] -> return firstArg
+    _ -> return $ CommaType firstArg restArgs
 
 pIntType :: Parser Type
 pIntType = IntType <$ symbol IntToken 
@@ -118,29 +144,22 @@ pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken na
 pParenType :: Parser Type
 pParenType = between (symbol LParenToken) (symbol RParenToken) pType
 
-pTypeTerm :: Parser Type
-pTypeTerm = choice 
-   [ pIntType
-   , pVoidType
-   , pBooleanType
-   , pSelfType
-   , pStructname
-   , pParenType
-   ]
-
-operatingTableType :: [[Operator Parser Type]]
-operatingTableType =
-  [
-     [commaType CommaToken CommaType
-     ,commaType ArrowToken HigherType
-     ]
-  ]
 
 ------------------------------------------------------
 
-
 pParam :: Parser Param
-pParam = Param
+pParam = try pCommaParam <|> pAtomParam -- Parse through and see if there's any comma token in the stream, backtrack if failed and do atomParam
+
+pCommaParam :: Parser Param
+pCommaParam = do
+  firstParam <- pAtomParam -- Get the first param, guranteeded
+  restParams <- many (symbol CommaToken *> pAtomParam) -- Return a list of Params, we don't care about the Comma token so its a list
+  case restParams of -- If the above works
+    [] -> return firstParam --if the rest list is empty, return the first param
+    _ -> return $ CommaParam firstParam restParams --Return the param and list of params
+
+pAtomParam :: Parser Param
+pAtomParam = Param
         <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
         <* symbol ColonToken
         <*> pType
@@ -159,11 +178,13 @@ pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
 pExprStmt :: Parser Stmt
 pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
 
-pBlockStmt :: Parser Stmt
-pBlockStmt = (symbol LBraceToken *> pStmt <* symbol RBraceToken)
+
 
 pBreakStmt :: Parser Stmt
 pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
+
+pBlockStmt :: Parser Stmt
+pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceToken)
 
 pStmt :: Parser Stmt
 pStmt = choice 
@@ -173,7 +194,10 @@ pStmt = choice
            pExprStmt,
            pBreakStmt,
            pBlockStmt
+           -- pBlockStmt
          ]
+        
+
 
 -- Parse a boolean literal
 pBoolean :: Parser Expr
@@ -270,11 +294,6 @@ operatorTable =
 binary :: Token -> (Expr -> Expr -> Expr) -> Operator Parser Expr
 binary tok f = InfixL (f <$ symbol tok)
 
-commaType :: Token -> (Type -> Type -> Type) -> Operator Parser Type
-commaType tok f = InfixL (f <$ symbol tok)
-
-commaParam :: Token -> (Param -> Param -> Param) -> Operator Parser Param
-commaParam tok f = InfixL (f <$ symbol tok)
 
 -- Helper for prefix operators
 prefix :: Token -> (Expr -> Expr) -> Operator Parser Expr
@@ -296,3 +315,6 @@ parseParam = runParser pParam ""
 
 parseStmt :: [Token] -> Either (ParseErrorBundle [Token] Void) Stmt
 parseStmt = runParser pStmt ""
+
+
+ 
