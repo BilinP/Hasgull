@@ -31,9 +31,7 @@ data Expr
   | Equals Expr Expr         
   | NotEquals Expr Expr      
   | GreaterThan Expr Expr     
-  | LessThan Expr Expr                 
-  | Return Expr               
-  | PrintLn Expr              
+  | LessThan Expr Expr                                      
   deriving (Eq, Ord, Show)
 
 data Stmt 
@@ -42,7 +40,9 @@ data Stmt
   | WhileStmt Expr Stmt
   | IfStmt Expr Stmt (Maybe Stmt)
   | BreakStmt
+  | PrintLnStmt Expr
   | BlockStmt [Stmt]
+  | ReturnStmt Expr
   | ExprStmt Expr 
   deriving(Eq, Ord, Show)
 
@@ -88,11 +88,11 @@ pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
 pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
 
-pReturn :: Parser Expr
-pReturn = Return <$> (symbol ReturnToken *> pAtom)
+pReturnStmt :: Parser Stmt
+pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> pAtom <* symbol SemiColonToken)
 
-pPrintLn :: Parser Expr
-pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
+pPrintLnStmt :: Parser Stmt
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) )
 ---------------------------------------------------------------------------
 
 
@@ -201,7 +201,9 @@ pStmt = choice
            pIfStmt,
            pWhileStmt,
            pBreakStmt,
-           pBlockStmt
+           pPrintLnStmt,
+           pBlockStmt,
+           pReturnStmt
          ]
         
 
@@ -264,8 +266,6 @@ condOperatorTable =
 pTerm :: Parser Expr
 pTerm = choice
   [ pParens
-  , pReturn
-  , pPrintLn
   , pVariable
   , pInteger
   ]

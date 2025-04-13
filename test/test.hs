@@ -171,6 +171,10 @@ parserTests = testGroup "Parser Tests"
       case tokenize "(Int , Boolean) => Int" of
         Right tokens -> parseType tokens @?= Right (HigherOrderType (CommaType IntType [BooleanType]) IntType)
         Left err -> assertFailure err
+  , testCase "Parse higher order function with only one argument" $
+      case tokenize ("(Int) => Int") of
+        Right tokens -> parseType tokens @?= Right (HigherOrderType (IntType) IntType)
+        Left err -> assertFailure err
   , testCase "Parse params" $
       case tokenize ("a1: Int") of
         Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType) )
@@ -201,6 +205,14 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse BreakStmt" $
       case tokenize ("break;") of
         Right tokens -> parseStmt tokens @?= Right (BreakStmt)
+        Left err -> assertFailure err
+  , testCase "Parse PrintLnStmt" $
+      case tokenize ("println(x)") of
+        Right tokens -> parseStmt tokens @?= Right (PrintLnStmt (Identifier "x"))
+        Left err -> assertFailure err
+  , testCase "Parse ReturnStmt" $
+      case tokenize ("return x;") of
+        Right tokens -> parseStmt tokens @?= Right (ReturnStmt (Identifier "x"))
         Left err -> assertFailure err
   , testCase "Parse Block stmts" $
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
