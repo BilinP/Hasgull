@@ -30,6 +30,7 @@ data Expr
   | Division Expr Expr
   | If Expr Expr (Maybe Expr) 
   | While Expr Expr          
+  | For Expr Expr Expr Expr 
   | Equals Expr Expr         
   | NotEquals Expr Expr      
   | GreaterThan Expr Expr     
@@ -232,6 +233,17 @@ pWhile :: Parser Expr
 pWhile = While <$> (symbol WhileToken *> pCondition)
                <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
 
+-- Parse for a For Loop
+pFor :: Parser Expr
+pFor = do
+  symbol ForToken
+  symbol LParenToken
+  initExpr <- pExpr <* symbol SemiColonToken
+  condExpr <- pExpr <* symbol SemiColonToken
+  postExpr <- pExpr <* RParenToken
+  bodyExpr <- symbol LBraceToken *> pExpr <* symbol RBraceToken
+  return $ For initExpr condExpr postExpr bodyExpr
+
 -- Parse a condition (boolean or comparison expression)
 pCondition :: Parser Expr
 pCondition = makeExprParser condTerm condOperatorTable
@@ -263,6 +275,7 @@ pTerm = choice
   [ pParens
   , pIf
   , pWhile
+  , pFor
   , pReturn
   , pPrintLn
   , pVariable
