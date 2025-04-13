@@ -53,3 +53,8 @@ data ConcMethodDef = ConcMethodDef
   , fReturnType :: TypeDef
   , fBody       :: [Statement]      -- ^ A list of statements in the function body
   } deriving (Show, Eq)
+
+data ConcMethodDef = ConcMethodDef
+  { strucName   :: String              
+  , strucFields :: CommaParam             
+  } deriving (Show, Eq)

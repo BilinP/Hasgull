@@ -319,16 +319,12 @@ parseType = runParser pType ""
 
 -----------------------------------------------------------------------------------------
 
--- erase if someone already made this
-type Parser = Parsec Void [Token]
--- erase if someone already made this
-
 -- Trait Parser
 parseTraitDef :: Parser TraitDef
 parseTraitDef =
   TraitDef
     <$ checkMatchingToken TraitToken
-    <*> isIdentifierToken 
+    <*> pIdentifier
     <* checkMatchingToken LBraceToken
     <*> many parseAbsMethodDef
     <* checkMatchingToken RBraceToken
@@ -338,7 +334,7 @@ parseAbsMethodDef :: Parser AbsMethodDef
 parseAbsMethodDef =
   AbsMethodDef
     <$ checkMatchingToken MethodToken
-    <*> isIdentifierToken 
+    <*> pIdentifier
     <* checkMatchingToken LParenToken
     <*> parseCommaParam
     <* checkMatchingToken RParenToken
@@ -353,11 +349,9 @@ parseStructDef :: Parser StructDef
 parseStructDef =
   StructDef
     <$ checkMatchingToken StructToken
-    -- Hold it as a StructName type within the Grammar, go back to this, may need to be changed
-    <*> isIdentifierToken
+    <*> pIdentifier
     <* checkMatchingToken LBraceToken
-    -- THIS PARSER STILL NEEDS TO BE DEFINED
-    <*> parseCommaParam
+    <*> parseParam
     <* checkMatchingToken RBraceToken
 
 -- ImplDef Parser
@@ -366,11 +360,10 @@ parseImplDef :: Parser ImplDef
 parseImplDef =
   ImplDef
     <$ checkMatchingToken ImplToken
-    <*> isIdentifierToken
+    <*> pIdentifier
     <* checkMatchingToken ForToken
     <*> parseType
     <* checkMatchingToken LBraceToken
-    -- THIS PARSER STILL NEEDS Grammar defined
     <*> many parseConcMethodDef
     <* checkMatchingToken RBraceToken
 
@@ -380,14 +373,14 @@ parseConcMethodDef :: Parser ConcMethodDef
 parseConcMethodDef =
   ConcMethodDef
     <$ checkMatchingToken MethodToken
-    <*> isIdentifierToken
+    <*> pIdentifier
     <* checkMatchingToken LParenToken
     <*> parseCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> parseType
     <* checkMatchingToken LBraceToken
-    <*> many parseStatment
+    <*> many parseStmt
     <* checkMatchingToken RBraceToken
 
 -- FuncDef Parser
@@ -395,19 +388,15 @@ parseConcMethodDef =
 parseFuncDef :: Parser FuncDef
 parseFuncDef =
   FuncDef
-    --REMIND myself to make FuncToken 
     <$ checkMatchingToken FuncToken
-    --Probably want to be saved as VariableType?
-    <*> isIdentifierToken
+    <*> pIdentifier
     <* checkMatchingToken LParenToken
     <*> parseCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
-    -- PLACEHOLDER until Parse type checker is imported
     <*> parseType
     <* checkMatchingToken LBraceToken
-    -- PLACEHOLDER until parseStatement is brought in
-    <*> many parseStatment
+    <*> many parseStmt
     <* checkMatchingToken RBraceToken
 
 
