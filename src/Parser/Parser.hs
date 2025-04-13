@@ -15,7 +15,7 @@ import Control.Monad.Combinators.Expr
 import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
-import AST
+import Parser.AST
 import Parser.Helpers
 
 -- Define the parser type
@@ -319,6 +319,15 @@ parseType = runParser pType ""
 
 -----------------------------------------------------------------------------------------
 
+
+pIdentifier :: Parser String
+pIdentifier = do
+  tok <- satisfy isIdentifierToken
+  case tok of
+    IdentifierToken name -> pure name
+    _ -> fail "Expected identifier"
+
+
 -- Trait Parser
 parseTraitDef :: Parser TraitDef
 parseTraitDef =
@@ -336,10 +345,10 @@ parseAbsMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> parseCommaParam
+    <*> pParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
-    <*> parseType
+    <*> pType
     <* checkMatchingToken SemiColonToken
 
 
@@ -351,7 +360,7 @@ parseStructDef =
     <$ checkMatchingToken StructToken
     <*> pIdentifier
     <* checkMatchingToken LBraceToken
-    <*> parseParam
+    <*> pParam
     <* checkMatchingToken RBraceToken
 
 -- ImplDef Parser
@@ -362,7 +371,7 @@ parseImplDef =
     <$ checkMatchingToken ImplToken
     <*> pIdentifier
     <* checkMatchingToken ForToken
-    <*> parseType
+    <*> pType
     <* checkMatchingToken LBraceToken
     <*> many parseConcMethodDef
     <* checkMatchingToken RBraceToken
@@ -375,12 +384,12 @@ parseConcMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> parseCommaParam
+    <*> pParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
-    <*> parseType
+    <*> pType
     <* checkMatchingToken LBraceToken
-    <*> many parseStmt
+    <*> many pStmt
     <* checkMatchingToken RBraceToken
 
 -- FuncDef Parser
@@ -389,14 +398,14 @@ parseFuncDef :: Parser FuncDef
 parseFuncDef =
   FuncDef
     <$ checkMatchingToken FuncToken
-    <*> pIdentifier
+    <*> pVariable
     <* checkMatchingToken LParenToken
-    <*> parseCommaParam
+    <*> pParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
-    <*> parseType
+    <*> pType
     <* checkMatchingToken LBraceToken
-    <*> many parseStmt
+    <*> many pStmt
     <* checkMatchingToken RBraceToken
 
 

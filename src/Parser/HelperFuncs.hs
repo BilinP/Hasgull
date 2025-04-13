@@ -1,4 +1,4 @@
-module Parser.Helpers (checkMatchingToken) where
+module Parser.Helpers where
 
 import Text.Megaparsec
 import Data.Void (Void)
@@ -19,9 +19,3 @@ isIdentifierToken :: Token -> Bool
 isIdentifierToken (IdentifierToken _) = True
 isIdentifierToken _ = False
 
-pIdentifier :: Parser String
-pIdentifier = do
-  tok <- satisfy isIdentifierToken
-  case tok of
-    IdentifierToken name -> pure name
-    _ -> fail "Expected identifier"
