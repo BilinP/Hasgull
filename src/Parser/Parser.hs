@@ -240,7 +240,7 @@ pFor = do
   symbol LParenToken
   initExpr <- pExpr <* symbol SemiColonToken
   condExpr <- pExpr <* symbol SemiColonToken
-  postExpr <- pExpr <* RParenToken
+  postExpr <- pExpr <* symbol RParenToken
   bodyExpr <- symbol LBraceToken *> pExpr <* symbol RBraceToken
   return $ For initExpr condExpr postExpr bodyExpr
 
