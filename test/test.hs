@@ -2,7 +2,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser (Expr(..) ,Type(..) ,parseExpression, parseType)
+import Parser.Parser (Expr(..) ,Type(..), Param(..), Stmt(..) ,parseExpression, parseType, parseParam, parseStmt)
 
 main :: IO ()
 main = defaultMain tests
@@ -28,7 +28,10 @@ tokenizerTests = testGroup "Tokenizer Tests"
   , 
      testCase "Tokenize parentheses and braces" $
       either assertFailure (@=? [LParenToken, IdentifierToken "x", RParenToken, LBraceToken, RBraceToken]) (tokenize "(x) {}")
-  , 
+  ,
+     testCase "Tokenize stmt within braces" $
+     either assertFailure(@=? [LBraceToken, LetToken, IdentifierToken "a1", ColonToken, IntToken, EqualToken, IntegerToken 5, RBraceToken]) (tokenize " {let a1:Int = 5}") 
+  ,
      testCase "Tokenize comparison operators" $
       either assertFailure (@=? [IdentifierToken "x", GreaterThanToken, IdentifierToken "y", LessThanToken, IdentifierToken "z"]) (tokenize "x > y < z")
   , 
@@ -165,17 +168,30 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseType tokens @?= Right IntType
         Left err -> assertFailure err
   , testCase "Parse higher order function with only one type inside Parenthesis" $
-      case tokenize "(Int, Boolean)" of
-        Right tokens -> parseType tokens @?= Right (CommaType (IntType) (BooleanType)) 
+      case tokenize "(Int , Boolean) => Int" of
+        Right tokens -> parseType tokens @?= Right (HigherOrderType (CommaType IntType [BooleanType]) IntType)
         Left err -> assertFailure err
-  , testCase "Parse commaType with three types" $
-      case tokenize "(Int, Int, Int)" of
-        Right tokens -> parseType tokens @?= Right (CommaType ( CommaType (IntType) (IntType )) (IntType))
+  , testCase "Parse params" $
+      case tokenize ("a1: Int") of
+        Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType) )
         Left err -> assertFailure err
-  , testCase "Parse Higher Order Types with one type" $
-      case tokenize "(Int) => Int" of
-        Right tokens -> parseType tokens @?= Right (HigherType (IntType) (IntType))
-  , testCase "Parse Higher Order Types with two types" $
-      case tokenize "(Int, Int) => Int" of
-        Right tokens -> parseType tokens @?= Right (HigherType (CommaType (IntType) (IntType )) (IntType))
-  ]
+  , testCase "Parse multiple params" $
+      case tokenize ("a1: Int , a2: Boolean") of
+        Right tokens -> parseParam tokens @?= Right (CommaParam (Param "a1" IntType) [Param "a2" BooleanType ])
+        Left err -> assertFailure err
+  , testCase "Parse LetStmt" $
+      case tokenize ("let a1: Int = 5;") of
+        Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
+  , testCase "Parse AssignStmt" $
+      case tokenize ("a1 = 5;") of
+        Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
+        Left err -> assertFailure err
+  , testCase "Parse BreakStmt" $
+      case tokenize ("break;") of
+        Right tokens -> parseStmt tokens @?= Right (BreakStmt)
+        Left err -> assertFailure err
+  , testCase "Parse Block stmts" $
+      case tokenize ("{let a1: Int = 5; a1 = 6;}") of
+        Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
+        Left err -> assertFailure err
+  ]     
