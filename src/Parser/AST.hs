@@ -1,9 +1,64 @@
-module Parser.AST where
+module Parser.AST
+  ( Expr(..)
+  , Type(..)
+  , Param(..)
+  , Stmt(..)
+  , Program(..)
+  , ProgramItem(..)
+  , TraitDef(..)
+  , AbsMethodDef(..)
+  , StructDef(..)
+  , ImplDef(..)
+  , ConcMethodDef(..)
+  , FuncDef(..)
+  ) where
 
+
+-- Define the expression data type
+data Expr
+  = Identifier String
+  | Int Int
+  | Negative Expr
+  | Add Expr Expr
+  | Sub Expr Expr
+  | Multiply Expr Expr
+  | Division Expr Expr
+  | If Expr Expr (Maybe Expr) 
+  | While Expr Expr          
+  | Equals Expr Expr         
+  | NotEquals Expr Expr      
+  | GreaterThan Expr Expr     
+  | LessThan Expr Expr                 
+  | Return Expr               
+  | PrintLn Expr              
+  deriving (Eq, Ord, Show)
+
+data Type 
+  = IntType
+  | VoidType
+  | BooleanType
+  | SelfType
+  | StructName String
+  | CommaType Type [Type] -- ?
+  | HigherOrderType Type Type
+  deriving(Eq, Ord, Show)
+
+data Param 
+  = Param String Type
+  | CommaParam Param [Param]
+  deriving(Eq, Ord, Show)
+
+data Stmt 
+  = LetStmt Param Expr
+  | AssgStmt Expr Expr
+  | BreakStmt
+  | BlockStmt [Stmt]
+  | ExprStmt Expr 
+  deriving(Eq, Ord, Show)
 
 data Program = Program
   { progItems :: [ProgramItem]
-  , progStmts :: [Statement]
+  , progStmts :: [Stmt]
   } deriving (Show, Eq)
 
 data ProgramItem
@@ -18,43 +73,35 @@ data TraitDef = TraitDef
   , traitAbsMethodDef :: [AbsMethodDef]
   } deriving (Show, Eq)
 
-data StructDef = TraitDef
-  { structName    :: Type
-  , traitAbsMethodDef :: [AbsMethodDef]
-  } deriving (Show, Eq)
-
+-- this needs to be reworked Param
 data AbsMethodDef = AbsMethodDef
   { abMethName :: String
-  , abMethParameters :: [CommaParam]
+  , abMethParameters :: Param
   , abMethReturnType :: Type
   } deriving (Show, Eq)
 
+--Param
 data StructDef = StructDef
   { strucName   :: String              
-  , strucFields :: CommaParam             
+  , strucFields :: Param             
   } deriving (Show, Eq)
 
 data ImplDef = ImplDef
-  { implTraitName  :: String           -- ^ Which trait we’re implementing
-  , iForType    :: TypeDef          -- ^ For what type we implement it
-  , iMethods    :: [ConcMethodDef]  -- ^ Concrete method definitions
+  { implTraitName  :: String           
+  , iForType    :: Type          
+  , iMethods    :: [ConcMethodDef]  
   } deriving (Show, Eq)
 
 data ConcMethodDef = ConcMethodDef
-  { cmName       :: String          -- ^ Method name
-  , cmParameters :: CommaParam
-  , cmReturnType :: TypeDef
-  , cmBody       :: [Statement]     -- ^ A list of statements as the method body
+  { cmName       :: String          
+  , cmParameters :: Param
+  , cmReturnType :: Type
+  , cmBody       :: [Stmt]     
   } deriving (Show, Eq)
 
-  data FuncDef = FuncDef
-  { funcName       :: String           -- ^ The function name
-  , funcParameters :: CommaParam          -- ^ Parameters
-  , fReturnType :: TypeDef
-  , fBody       :: [Statement]      -- ^ A list of statements in the function body
-  } deriving (Show, Eq)
-
-data ConcMethodDef = ConcMethodDef
-  { strucName   :: String              
-  , strucFields :: CommaParam             
-  } deriving (Show, Eq)
+data FuncDef = FuncDef
+    { funcName       :: String
+    , funcParameters :: Param
+    , fReturnType    :: Type
+    , fBody          :: [Stmt]
+    } deriving (Show, Eq)

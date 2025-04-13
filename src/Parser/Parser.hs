@@ -1,12 +1,14 @@
 module Parser.Parser (
-  Expr(..),
-  Type(..),
-  Param(..),
-  Stmt(..),
   parseExpression,
   parseType,
   parseParam,
-  parseStmt
+  parseStmt,
+  pTraitDef,
+  pAbsMethodDef,
+  pStructDef,
+  pImplDef,
+  pConcMethodDef,
+  pFuncDef
 ) where
 
 import Tokenizer.Token (Token(..))
@@ -16,53 +18,10 @@ import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
 import Parser.AST
-import Parser.Helpers
+
 
 -- Define the parser type
 type Parser = Parsec Void [Token]
-
--- Define the expression data type
-data Expr
-  = Identifier String
-  | Int Int
-  | Negative Expr
-  | Add Expr Expr
-  | Sub Expr Expr
-  | Multiply Expr Expr
-  | Division Expr Expr
-  | If Expr Expr (Maybe Expr) 
-  | While Expr Expr          
-  | Equals Expr Expr         
-  | NotEquals Expr Expr      
-  | GreaterThan Expr Expr     
-  | LessThan Expr Expr                 
-  | Return Expr               
-  | PrintLn Expr              
-  deriving (Eq, Ord, Show)
-
-data Stmt 
-  = LetStmt Param Expr
-  | AssgStmt Expr Expr
-  | BreakStmt
-  | BlockStmt [Stmt]
-  | ExprStmt Expr 
-  deriving(Eq, Ord, Show)
-
-data Type 
-  = IntType
-  | VoidType
-  | BooleanType
-  | SelfType
-  | StructName String
-  | CommaType Type [Type] -- ?
-  | HigherOrderType Type Type
-  deriving(Eq, Ord, Show)
-
-
-data Param 
-  = Param String Type
-  | CommaParam Param [Param]
-  deriving(Eq, Ord, Show)
 
 -- Parse a variable
 pVariable :: Parser Expr
@@ -81,8 +40,9 @@ isIntegerToken :: Token -> Bool
 isIntegerToken (IntegerToken _) = True
 isIntegerToken _ = False
 
-
-
+-- checkMatching Token
+checkMatchingToken :: Token -> Parser Token
+checkMatchingToken t = label (show t) $ satisfy (== t)
 ---------------------------------------------------------------------------
 pAtom :: Parser Expr
 pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
@@ -317,6 +277,31 @@ parseExpression = runParser pExpr ""
 parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
 
+---------------------------------------------------------------------------------
+-- | Parse a TraitDef from a list of tokens
+pTraitDef :: [Token] -> Either (ParseErrorBundle [Token] Void) TraitDef
+pTraitDef = runParser parseTraitDef ""
+
+-- | Parse an AbsMethodDef from a list of tokens
+pAbsMethodDef :: [Token] -> Either (ParseErrorBundle [Token] Void) AbsMethodDef
+pAbsMethodDef = runParser parseAbsMethodDef ""
+
+-- | Parse a StructDef from a list of tokens
+pStructDef :: [Token] -> Either (ParseErrorBundle [Token] Void) StructDef
+pStructDef = runParser parseStructDef ""
+
+-- | Parse an ImplDef from a list of tokens
+pImplDef :: [Token] -> Either (ParseErrorBundle [Token] Void) ImplDef
+pImplDef = runParser parseImplDef ""
+
+-- | Parse a ConcMethodDef from a list of tokens
+pConcMethodDef :: [Token] -> Either (ParseErrorBundle [Token] Void) ConcMethodDef
+pConcMethodDef = runParser parseConcMethodDef ""
+
+-- | Parse a FuncDef from a list of tokens
+pFuncDef :: [Token] -> Either (ParseErrorBundle [Token] Void) FuncDef
+pFuncDef = runParser parseFuncDef ""
+
 -----------------------------------------------------------------------------------------
 
 
@@ -398,7 +383,7 @@ parseFuncDef :: Parser FuncDef
 parseFuncDef =
   FuncDef
     <$ checkMatchingToken FuncToken
-    <*> pVariable
+    <*> pIdentifier
     <* checkMatchingToken LParenToken
     <*> pParam
     <* checkMatchingToken RParenToken

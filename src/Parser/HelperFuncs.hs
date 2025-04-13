@@ -1,21 +1,17 @@
-module Parser.Helpers where
+module Parser.HelperFuncs ()where
 
-import Text.Megaparsec
-import Data.Void (Void)
-import Tokenizer.Token (Token(..))
-import qualified Tokenizer.Token as T
 
-type Parser = Parsec Void [Token]
+-- import Text.Megaparsec hiding (Token)
+-- import Data.Void (Void)
+-- import Tokenizer.Token (Token(..))
 
--- | Match exactly the given token, consuming one token from the stream.
-checkMatchingToken :: Token -> Parser Token
-checkMatchingToken t = label (show t) $ satisfy (== t)
+-- type Parser = Parsec Void [Token]
 
--- Parse a variable
-pVariable :: Parser Expr
-pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+-- -- | Match exactly the given token, consuming one token from the stream.
+-- checkMatchingToken :: Token -> Parser Token
+-- checkMatchingToken t = label (show t) $ satisfy (== t)
 
-isIdentifierToken :: Token -> Bool
-isIdentifierToken (IdentifierToken _) = True
-isIdentifierToken _ = False
+-- isIdentifierToken :: Token -> Bool
+-- isIdentifierToken (IdentifierToken _) = True
+-- isIdentifierToken _ = False
 
