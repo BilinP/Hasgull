@@ -194,4 +194,14 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
         Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
         Left err -> assertFailure err
+  , testCase "Parse for loop" $
+      case tokenize "for (let i: Int = 0; i < 5; i = i + 1) { println(i); }" of
+        Right tokens -> parseExpression tokens @?= Right (
+          For
+            (LetStmt (Param "i" IntType) (Int 0))
+            (LessThan (Identifier "i") (Int 5))
+            (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1)))
+            (PrintLn (Identifier "i"))
+        )
+        Left err -> assertFailure err
   ]     
