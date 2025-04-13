@@ -225,25 +225,21 @@ parseExpression = runParser pExpr ""
 parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
 
-
-import Parser.Helpers
-
+-----------------------------------------------------------------------------------------
 
 -- erase if someone already made this
 type Parser = Parsec Void [Token]
 -- erase if someone already made this
 
------------------------------------------------------------------------------------
-
 -- Trait Parser
-parseTraitDf :: Parser TraitDef
+parseTraitDef :: Parser TraitDef
 parseTraitDef =
   TraitDef
-    <$ checkMatchingToken Trait
+    <$ checkMatchingToken TraitToken
     <*> isIdentifierToken 
     <* checkMatchingToken LBraceToken
     <*> many parseAbsMethodDef
-    <* symbol RBraceToken
+    <* checkMatchingToken RBraceToken
 
 -- Abstract method Definition Parser
 parseAbsMethodDef :: Parser AbsMethodDef
@@ -255,8 +251,7 @@ parseAbsMethodDef =
     <*> parseCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
-    --THIS IS JUST PLACEHOLDER UNTIL type Parser  function is brought in
-    <*> parseTypeDef
+    <*> parseType
     <* checkMatchingToken SemiColonToken
 
 
@@ -281,11 +276,26 @@ parseImplDef =
     <$ checkMatchingToken ImplToken
     <*> isIdentifierToken
     <* checkMatchingToken ForToken
-    --THIS IS JUST PLACEHOLDER UNTIL type Parser function is brought in
-    <*> parseTypeDef
+    <*> parseType
     <* checkMatchingToken LBraceToken
-    -- THIS PARSER STILL NEEDS TO BE DEFINED
+    -- THIS PARSER STILL NEEDS Grammar defined
     <*> many parseConcMethodDef
+    <* checkMatchingToken RBraceToken
+
+-- ImplDef Parser
+-- conc_methoddef ::= `method` var `(` comma_param `)` `:` type `{` stmt* `}`
+parseConcMethodDef :: Parser ConcMethodDef
+parseConcMethodDef =
+  ConcMethodDef
+    <$ checkMatchingToken MethodToken
+    <*> isIdentifierToken
+    <* checkMatchingToken LParenToken
+    <*> parseCommaParam
+    <* checkMatchingToken RParenToken
+    <* checkMatchingToken ColonToken
+    <*> parseType
+    <* checkMatchingToken LBraceToken
+    <*> many parseStatment
     <* checkMatchingToken RBraceToken
 
 -- FuncDef Parser
@@ -296,17 +306,19 @@ parseFuncDef =
     --REMIND myself to make FuncToken 
     <$ checkMatchingToken FuncToken
     --Probably want to be saved as VariableType?
-    <*> IdentifierToken
+    <*> isIdentifierToken
     <* checkMatchingToken LParenToken
     <*> parseCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     -- PLACEHOLDER until Parse type checker is imported
-    <*> parseTypeDef
+    <*> parseType
     <* checkMatchingToken LBraceToken
     -- PLACEHOLDER until parseStatement is brought in
     <*> many parseStatment
     <* checkMatchingToken RBraceToken
+
+
 
 
 
