@@ -186,6 +186,18 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("a1 = 5;") of
         Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
         Left err -> assertFailure err
+  , testCase "Parse WhileStmt" $
+      case tokenize ("while(x < 5) {  x = x+1; }") of
+        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1)) ) )
+        Left err -> assertFailure err
+  , testCase "Parse IfStmt" $
+      case tokenize ("if (x <5) x = x * 2 ;") of
+        Right tokens -> parseStmt tokens @?= Right (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) Nothing)
+        Left err -> assertFailure err
+  , testCase "Parse IfStmt with a Else" $
+      case tokenize ("if (x < 5) x = x * 2 ; else x = x + 2;") of
+        Right tokens -> parseStmt tokens @?= Right (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2)))))
+        Left err -> assertFailure err
   , testCase "Parse BreakStmt" $
       case tokenize ("break;") of
         Right tokens -> parseStmt tokens @?= Right (BreakStmt)

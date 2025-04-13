@@ -27,9 +27,7 @@ data Expr
   | Add Expr Expr
   | Sub Expr Expr
   | Multiply Expr Expr
-  | Division Expr Expr
-  | If Expr Expr (Maybe Expr) 
-  | While Expr Expr          
+  | Division Expr Expr       
   | Equals Expr Expr         
   | NotEquals Expr Expr      
   | GreaterThan Expr Expr     
@@ -41,6 +39,8 @@ data Expr
 data Stmt 
   = LetStmt Param Expr
   | AssgStmt Expr Expr
+  | WhileStmt Expr Stmt
+  | IfStmt Expr Stmt (Maybe Stmt)
   | BreakStmt
   | BlockStmt [Stmt]
   | ExprStmt Expr 
@@ -186,15 +186,22 @@ pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
 pBlockStmt :: Parser Stmt
 pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceToken)
 
+pWhileStmt :: Parser Stmt
+pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
+               <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
+
+
+
+
 pStmt :: Parser Stmt
 pStmt = choice 
          [
            pLetStmt,
            pAssgStmt,
-           pExprStmt,
+           pIfStmt,
+           pWhileStmt,
            pBreakStmt,
            pBlockStmt
-           -- pBlockStmt
          ]
         
 
@@ -209,28 +216,24 @@ pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 -- Parse an if expression
-pIf :: Parser Expr
-pIf = If <$> (symbol IfToken *> pCondition)
-         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+pIfStmt :: Parser Stmt
+pIfStmt = IfStmt <$> (symbol IfToken *> pCondition)
+         <*> pStmt 
          <*> optional pElseOrElseIf
 
 -- Parse an else or else if block #quirk 
-pElseOrElseIf :: Parser Expr
+pElseOrElseIf :: Parser Stmt
 pElseOrElseIf = do
   _ <- symbol ElseToken
   choice
     [ 
-      If <$> (symbol IfToken *> pCondition)
-         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+      IfStmt <$> (symbol IfToken *> pCondition)
+         <*> (symbol LBraceToken *> pStmt <* symbol RBraceToken)
          <*> optional pElseOrElseIf
     , 
-      symbol LBraceToken *> pExpr <* symbol RBraceToken
+       pStmt 
     ]
 
--- Parse a while expression
-pWhile :: Parser Expr
-pWhile = While <$> (symbol WhileToken *> pCondition)
-               <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
 
 -- Parse a condition (boolean or comparison expression)
 pCondition :: Parser Expr
@@ -261,8 +264,6 @@ condOperatorTable =
 pTerm :: Parser Expr
 pTerm = choice
   [ pParens
-  , pIf
-  , pWhile
   , pReturn
   , pPrintLn
   , pVariable
