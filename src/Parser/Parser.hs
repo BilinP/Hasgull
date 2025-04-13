@@ -278,6 +278,9 @@ parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
 
 ---------------------------------------------------------------------------------
+--NOTES I did the opposite in terms of naming scheme from you guys
+-- this was by accident
+
 -- | Parse a TraitDef from a list of tokens
 pTraitDef :: [Token] -> Either (ParseErrorBundle [Token] Void) TraitDef
 pTraitDef = runParser parseTraitDef ""

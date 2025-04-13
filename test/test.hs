@@ -2,7 +2,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser (Expr(..) ,Type(..), Param(..), Stmt(..) ,parseExpression, parseType, parseParam, parseStmt)
+import Parser.AST
+import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef)
 
 main :: IO ()
 main = defaultMain tests
@@ -194,4 +195,83 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
         Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
         Left err -> assertFailure err
+  , testCase "Parse TraitDef with a single abstract method" $
+      case tokenize "trait MyTrait { method doIt(x: Int): Void; }" of
+        Right tokens ->
+          pTraitDef tokens @?= Right
+            (TraitDef
+               { traitName = "MyTrait"
+               , traitAbsMethodDef =
+                   [ AbsMethodDef
+                       { abMethName = "doIt"
+                       , abMethParameters = Param "x" IntType
+                       , abMethReturnType = VoidType
+                       }
+                   ]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse AbsMethodDef" $
+      case tokenize "method doIt(x: Int): Void;" of
+        Right tokens ->
+          pAbsMethodDef tokens @?= Right
+            (AbsMethodDef
+               { abMethName = "doIt"
+               , abMethParameters = Param "x" IntType
+               , abMethReturnType = VoidType
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse StructDef with a single field" $
+      case tokenize "struct Car { brand: Int }" of
+        Right tokens ->
+          pStructDef tokens @?= Right
+            (StructDef
+               { strucName = "Car"
+               , strucFields = Param "brand" IntType
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse ImplDef with one concrete method" $
+      case tokenize "impl MyTrait for Car { method doIt(x: Int): Void { break; } }" of
+        Right tokens ->
+          pImplDef tokens @?= Right
+            (ImplDef
+               { implTraitName = "MyTrait"
+               , iForType = StructName "Car"
+               , iMethods =
+                   [ ConcMethodDef
+                       { cmName = "doIt"
+                       , cmParameters = Param "x" IntType
+                       , cmReturnType = VoidType
+                       , cmBody = [BreakStmt]
+                       }
+                   ]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse ConcMethodDef alone" $
+      case tokenize "method setVal(x: Int): Void { x = 5; }" of
+        Right tokens ->
+          pConcMethodDef tokens @?= Right
+            (ConcMethodDef
+               { cmName = "setVal"
+               , cmParameters = Param "x" IntType
+               , cmReturnType = VoidType
+               , cmBody = [AssgStmt (Identifier "x") (Int 5)]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse FuncDef with a single statement" $
+      case tokenize "func main(a: Int): Void { a = 5; }" of
+        Right tokens ->
+          pFuncDef tokens @?= Right
+            (FuncDef
+               { funcName = "main"
+               , funcParameters = Param "a" IntType
+               , funcReturnType = VoidType
+               , funcBody = [AssgStmt (Identifier "a") (Int 5)]
+               })
+        Left err -> assertFailure err
+
   ]     

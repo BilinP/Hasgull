@@ -102,6 +102,6 @@ data ConcMethodDef = ConcMethodDef
 data FuncDef = FuncDef
     { funcName       :: String
     , funcParameters :: Param
-    , fReturnType    :: Type
-    , fBody          :: [Stmt]
+    , funcReturnType    :: Type
+    , funcBody          :: [Stmt]
     } deriving (Show, Eq)
