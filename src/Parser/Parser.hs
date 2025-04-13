@@ -8,7 +8,8 @@ module Parser.Parser (
   pStructDef,
   pImplDef,
   pConcMethodDef,
-  pFuncDef
+  pFuncDef,
+  pProgramItem
 ) where
 
 import Tokenizer.Token (Token(..))
@@ -305,6 +306,8 @@ pConcMethodDef = runParser parseConcMethodDef ""
 pFuncDef :: [Token] -> Either (ParseErrorBundle [Token] Void) FuncDef
 pFuncDef = runParser parseFuncDef ""
 
+pProgramItem :: [Token] -> Either (ParseErrorBundle [Token] Void) ProgramItem
+pProgramItem = runParser parseProgramItem
 -----------------------------------------------------------------------------------------
 
 
@@ -395,6 +398,17 @@ parseFuncDef =
     <* checkMatchingToken LBraceToken
     <*> many pStmt
     <* checkMatchingToken RBraceToken
+
+-- parse Program Items
+-- program_item ::= structdef | traitdef | impldef | funcdef
+parseProgramItem :: Parser ProgramItem
+parseProgramItem =
+  choice
+    [ StructItem <$> parseStructDef
+    , TraitItem  <$> parseTraitDef
+    , ImplItem   <$> parseImplDef
+    , FuncItem   <$> parseFuncDef
+    ]
 
 
  
