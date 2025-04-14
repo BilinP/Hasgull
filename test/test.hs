@@ -3,7 +3,7 @@ import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import Parser.AST
-import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem)
+import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 
 main :: IO ()
 main = defaultMain tests
@@ -273,5 +273,31 @@ parserTests = testGroup "Parser Tests"
                , funcBody = [AssgStmt (Identifier "a") (Int 5)]
                })
         Left err -> assertFailure err
-
+  , testCase "Parse ProgramItem with StructDef" $
+      case tokenize "struct Person { name: Int }" of
+        Right tokens ->
+          pProgramItem tokens @?= Right
+            (PI_Struct (StructDef
+               { strucName   = "Person"
+               , strucFields = Param "name" IntType
+               }))
+        Left err ->
+          assertFailure err
+  , testCase "Parse Program with one struct and one statement" $
+      case tokenize "struct Person { age: Int } let age: Int = 21;" of
+        Right tokens ->
+          pProgram tokens @?= Right
+            (Program
+               { progItems =
+                   [ PI_Struct (StructDef
+                       { strucName   = "Person"
+                       , strucFields = Param "age" IntType
+                       })
+                   ]
+               , progStmts =
+                   [ LetStmt (Param "age" IntType) (Int 21) ]
+               })
+        Left err ->
+          assertFailure err
+  
   ]     

@@ -73,7 +73,6 @@ data TraitDef = TraitDef
   , traitAbsMethodDef :: [AbsMethodDef]
   } deriving (Show, Eq)
 
--- this needs to be reworked Param
 data AbsMethodDef = AbsMethodDef
   { abMethName :: String
   , abMethParameters :: Param

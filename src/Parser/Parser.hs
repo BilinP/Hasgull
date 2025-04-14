@@ -9,7 +9,8 @@ module Parser.Parser (
   pImplDef,
   pConcMethodDef,
   pFuncDef,
-  pProgramItem
+  pProgramItem,
+  pProgram
 ) where
 
 import Tokenizer.Token (Token(..))
@@ -306,8 +307,13 @@ pConcMethodDef = runParser parseConcMethodDef ""
 pFuncDef :: [Token] -> Either (ParseErrorBundle [Token] Void) FuncDef
 pFuncDef = runParser parseFuncDef ""
 
+-- | Parse a ProgramItem from a list of tokens
 pProgramItem :: [Token] -> Either (ParseErrorBundle [Token] Void) ProgramItem
-pProgramItem = runParser parseProgramItem
+pProgramItem = runParser parseProgramItem ""
+
+-- | Parse a Program from a list of tokens
+pProgram :: [Token] -> Either (ParseErrorBundle [Token] Void) Program
+pProgram = runParser parseProgram ""
 -----------------------------------------------------------------------------------------
 
 
@@ -404,11 +410,18 @@ parseFuncDef =
 parseProgramItem :: Parser ProgramItem
 parseProgramItem =
   choice
-    [ StructItem <$> parseStructDef
-    , TraitItem  <$> parseTraitDef
-    , ImplItem   <$> parseImplDef
-    , FuncItem   <$> parseFuncDef
+    [ PI_Struct <$> parseStructDef
+    , PI_Trait  <$> parseTraitDef
+    , PI_Impl   <$> parseImplDef
+    , PI_Func   <$> parseFuncDef
     ]
 
+-- parse Program
+-- program ::= program_item* stmt* 
+parseProgram :: Parser Program
+parseProgram =
+  Program
+    <$> many parseProgramItem
+    <*> many pStmt
 
  
