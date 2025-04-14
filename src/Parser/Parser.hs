@@ -11,8 +11,8 @@ module Parser.Parser (
 
 import Tokenizer.Token (Token(..))
 import Control.Monad.Combinators.Expr
--- import Control.Applicative
-import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
+import Control.Applicative
+import Text.Megaparsec hiding (Token, many) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
 
@@ -54,14 +54,12 @@ data Type
   | BooleanType
   | SelfType
   | StructName String
-  | CommaType Type [Type] -- ?
-  | HigherOrderType Type Type
+  | HigherOrderType [Type] Type
   deriving(Eq, Ord, Show)
 
 
 data Param 
   = Param String Type
-  | CommaParam Param [Param]
   deriving(Eq, Ord, Show)
 
 -- Parse a variable
@@ -120,13 +118,11 @@ pFunctionType = do
   result <- pType
   return $ HigherOrderType arg result -- Bind the HigherOrder Type with the argument and the resulting type
 
-pArgType :: Parser Type
-pArgType = do
+pArgType :: Parser [Type]
+pArgType = option [] $ do
   firstArg <- pAtomType --Get the single,guranteed type
   restArgs <- many (symbol CommaToken *> pAtomType)
-  case restArgs of
-    [] -> return firstArg
-    _ -> return $ CommaType firstArg restArgs
+  return ( firstArg : restArgs)
 
 pIntType :: Parser Type
 pIntType = IntType <$ symbol IntToken 
@@ -150,15 +146,13 @@ pParenType = between (symbol LParenToken) (symbol RParenToken) pType
 ------------------------------------------------------
 
 pParam :: Parser Param
-pParam = try pCommaParam <|> pAtomParam -- Parse through and see if there's any comma token in the stream, backtrack if failed and do atomParam
+pParam = try pAtomParam -- Parse through and see if there's any comma token in the stream, backtrack if failed and do atomParam
 
-pCommaParam :: Parser Param
-pCommaParam = do
+pCommaParam :: Parser [Param]
+pCommaParam = option [] $ do
   firstParam <- pAtomParam -- Get the first param, guranteeded
   restParams <- many (symbol CommaToken *> pAtomParam) -- Return a list of Params, we don't care about the Comma token so its a list
-  case restParams of -- If the above works
-    [] -> return firstParam --if the rest list is empty, return the first param
-    _ -> return $ CommaParam firstParam restParams --Return the param and list of params
+  return (firstParam : restParams)
 
 pAtomParam :: Parser Param
 pAtomParam = Param

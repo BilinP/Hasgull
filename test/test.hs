@@ -184,19 +184,15 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse higher order function with only one type inside Parenthesis" $
       case tokenize "(Int , Boolean) => Int" of
-        Right tokens -> parseType tokens @?= Right (HigherOrderType (CommaType IntType [BooleanType]) IntType)
+        Right tokens -> parseType tokens @?= Right (HigherOrderType ([IntType, BooleanType]) IntType)
         Left err -> assertFailure err
   , testCase "Parse higher order function with only one argument" $
       case tokenize ("(Int) => Int") of
-        Right tokens -> parseType tokens @?= Right (HigherOrderType (IntType) IntType)
+        Right tokens -> parseType tokens @?= Right (HigherOrderType ([IntType]) IntType)
         Left err -> assertFailure err
   , testCase "Parse params" $
       case tokenize ("a1: Int") of
         Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType) )
-        Left err -> assertFailure err
-  , testCase "Parse multiple params" $
-      case tokenize ("a1: Int , a2: Boolean") of
-        Right tokens -> parseParam tokens @?= Right (CommaParam (Param "a1" IntType) [Param "a2" BooleanType ])
         Left err -> assertFailure err
   , testCase "Parse LetStmt" $
       case tokenize ("let a1: Int = 5;") of
