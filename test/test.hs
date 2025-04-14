@@ -419,6 +419,10 @@ parserTests = testGroup "Parser Tests"
               ]
           })
     Left err -> assertFailure err
-
+  , 
+      testCase "Parse dot expression plus call" $
+      case tokenize ("obj.method2(a,b)(a)") of
+        Right tokens -> parseExpression tokens @?= Right (Call (Call (DotExpr (Identifier "obj") (Identifier "method2")) [Identifier "a",Identifier "b"]) [Identifier "a"])
+        Left err -> assertFailure err
 
   ]     
