@@ -84,7 +84,6 @@ data AbsMethodDef = AbsMethodDef
   , abMethReturnType :: Type
   } deriving (Show, Eq)
 
---Param
 data StructDef = StructDef
   { strucName   :: String              
   , strucFields :: Param             

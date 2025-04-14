@@ -369,4 +369,56 @@ parserTests = testGroup "Parser Tests"
           })
     Left err -> assertFailure err
 
+  , testCase "Parse Program with all 4 different Program Items and Two Statements" $
+  case tokenize "trait MyTrait { method doIt(x: Int): Void; } \
+               \struct Car { brand: Int } \
+               \impl MyTrait for Car { method doIt(x: Int): Void { break; } } \
+               \func main(a: Int): Void { return; } \
+               \let a: Int = 42; \
+               \a = a + 1;" of
+    Right tokens ->
+      pProgram tokens @?= Right
+        (Program
+          { progItems =
+              [ PI_Trait (TraitDef
+                  { traitName = "MyTrait"
+                  , traitAbsMethodDef =
+                      [ AbsMethodDef
+                          { abMethName       = "doIt"
+                          , abMethParameters = Param "x" IntType
+                          , abMethReturnType = VoidType
+                          }
+                      ]
+                  })
+              , PI_Struct (StructDef
+                  { strucName   = "Car"
+                  , strucFields = Param "brand" IntType
+                  })
+              , PI_Impl (ImplDef
+                  { implTraitName = "MyTrait"
+                  , iForType      = StructName "Car"
+                  , iMethods      =
+                      [ ConcMethodDef
+                          { cmName       = "doIt"
+                          , cmParameters = Param "x" IntType
+                          , cmReturnType = VoidType
+                          , cmBody       = [BreakStmt]
+                          }
+                      ]
+                  })
+              , PI_Func (FuncDef
+                  { funcName       = "main"
+                  , funcParameters = Param "a" IntType
+                  , funcReturnType = VoidType
+                  , funcBody       = [ReturnStmt Nothing]
+                  })
+              ]
+          , progStmts =
+              [ LetStmt (Param "a" IntType) (Int 42)
+              , AssgStmt (Identifier "a") (Add (Identifier "a") (Int 1))
+              ]
+          })
+    Left err -> assertFailure err
+
+
   ]     
