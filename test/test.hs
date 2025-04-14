@@ -237,4 +237,9 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
         Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
         Left err -> assertFailure err
+  , 
+      testCase "Parse dot expression plus call" $
+      case tokenize ("obj.method2(a,b)(a)") of
+        Right tokens -> parseExpression tokens @?= Right (Call (Call (DotExpr (Identifier "obj") (Identifier "method2")) [Identifier "a",Identifier "b"]) [Identifier "a"])
+        Left err -> assertFailure err
   ]     

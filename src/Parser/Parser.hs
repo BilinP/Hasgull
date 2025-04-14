@@ -26,6 +26,7 @@ data Expr
   | Negative Expr
   | Add Expr Expr
   | DotExpr Expr Expr
+  | Call Expr [Expr]
   | Sub Expr Expr
   | LowerSelf 
   | Multiply Expr Expr
@@ -63,6 +64,17 @@ data Param
   = Param String Type
   | CommaParam Param [Param]
   deriving(Eq, Ord, Show)
+
+
+pCommaExp :: Parser [Expr]
+pCommaExp = option [] $ do
+    first <- pExpr
+    rest  <- many (symbol CommaToken *> pExpr)
+    return (first : rest)
+
+--Call expression parser
+pCallExp :: Parser Expr
+pCallExp = foldl Call <$> pExpr <*> many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
 
 -- Parse a variable
 pVariable :: Parser Expr
@@ -275,6 +287,7 @@ condOperatorTable =
 pTerm :: Parser Expr
 pTerm = choice
   [ pParens
+  , pCallExp
   , pVariable
   , pInteger
   , pSelf
