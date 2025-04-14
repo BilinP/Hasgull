@@ -338,5 +338,35 @@ parserTests = testGroup "Parser Tests"
                })
         Left err ->
           assertFailure err
-  
+  , testCase "Parse Program with multiple items and multiple statements" $
+  case tokenize "trait MyTrait { method doIt(x: Int): Void; } \
+               \struct Car { brand: Int } \
+               \let a: Int = 42; \
+               \a = a + 1;" of
+    Right tokens ->
+      pProgram tokens @?= Right
+        (Program
+          { progItems =
+              [ PI_Trait (TraitDef
+                  { traitName = "MyTrait"
+                  , traitAbsMethodDef =
+                      [ AbsMethodDef
+                          { abMethName       = "doIt"
+                          , abMethParameters = Param "x" IntType
+                          , abMethReturnType = VoidType
+                          }
+                      ]
+                  })
+              , PI_Struct (StructDef
+                  { strucName   = "Car"
+                  , strucFields = Param "brand" IntType
+                  })
+              ]
+          , progStmts =
+              [ LetStmt (Param "a" IntType) (Int 42)
+              , AssgStmt (Identifier "a") (Add (Identifier "a") (Int 1))
+              ]
+          })
+    Left err -> assertFailure err
+
   ]     

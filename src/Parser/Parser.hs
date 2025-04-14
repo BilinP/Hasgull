@@ -25,49 +25,6 @@ import Parser.AST
 -- Define the parser type
 type Parser = Parsec Void [Token]
 
--- Define the expression data type
-data Expr
-  = Identifier String
-  | Int Int
-  | Negative Expr
-  | Add Expr Expr
-  | DotExpr Expr Expr
-  | Sub Expr Expr
-  | LowerSelf 
-  | Multiply Expr Expr
-  | Division Expr Expr       
-  | Equals Expr Expr         
-  | NotEquals Expr Expr      
-  | GreaterThan Expr Expr     
-  | LessThan Expr Expr                                      
-  deriving (Eq, Ord, Show)
-
-data Stmt 
-  = LetStmt Param Expr
-  | AssgStmt Expr Expr
-  | WhileStmt Expr Stmt
-  | IfStmt Expr Stmt (Maybe Stmt)
-  | BreakStmt
-  | PrintLnStmt Expr
-  | BlockStmt [Stmt]
-  | ReturnStmt (Maybe Expr)
-  | ExprStmt Expr 
-  deriving(Eq, Ord, Show)
-
-data Type 
-  = IntType
-  | VoidType
-  | BooleanType
-  | SelfType
-  | StructName String
-  | HigherOrderType [Type] Type
-  deriving(Eq, Ord, Show)
-
-
-data Param 
-  = Param String Type
-  deriving(Eq, Ord, Show)
-
 -- Parse a variable
 pVariable :: Parser Expr
 pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
@@ -374,6 +331,20 @@ pIdentifier = do
     IdentifierToken name -> pure name
     _ -> fail "Expected identifier"
 
+pAtomStructActualParam :: Parser StructActualParam
+pAtomStructActualParam = StructActualParam
+        <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+        <* symbol ColonToken
+        <*> pExpr
+
+pStructActualParam :: Parser StructActualParam
+pStructActualParam = try pAtomStructActualParam
+
+pStructActualParams :: Parser [StructActualParam]
+pStructActualParams = option [] $ do
+  firstParam <- pAtomStructActualParam
+  restParams <- many (symbol CommaToken *> pAtomStructActualParam)
+  return (firstParam : restParams)
 
 -- Trait Parser
 parseTraitDef :: Parser TraitDef

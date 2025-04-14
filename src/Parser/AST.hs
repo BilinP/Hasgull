@@ -11,6 +11,7 @@ module Parser.AST
   , ImplDef(..)
   , ConcMethodDef(..)
   , FuncDef(..)
+  , StructActualParam(..)
   ) where
 
 
@@ -20,18 +21,28 @@ data Expr
   | Int Int
   | Negative Expr
   | Add Expr Expr
+  | DotExpr Expr Expr
   | Sub Expr Expr
+  | LowerSelf 
   | Multiply Expr Expr
-  | Division Expr Expr
-  | If Expr Expr (Maybe Expr) 
-  | While Expr Expr          
+  | Division Expr Expr       
   | Equals Expr Expr         
   | NotEquals Expr Expr      
   | GreaterThan Expr Expr     
-  | LessThan Expr Expr                 
-  | Return Expr               
-  | PrintLn Expr              
+  | LessThan Expr Expr                                      
   deriving (Eq, Ord, Show)
+
+data Stmt 
+  = LetStmt Param Expr
+  | AssgStmt Expr Expr
+  | WhileStmt Expr Stmt
+  | IfStmt Expr Stmt (Maybe Stmt)
+  | BreakStmt
+  | PrintLnStmt Expr
+  | BlockStmt [Stmt]
+  | ReturnStmt (Maybe Expr)
+  | ExprStmt Expr 
+  deriving(Eq, Ord, Show)
 
 data Type 
   = IntType
@@ -39,21 +50,15 @@ data Type
   | BooleanType
   | SelfType
   | StructName String
-  | CommaType Type [Type] -- ?
-  | HigherOrderType Type Type
+  | HigherOrderType [Type] Type
   deriving(Eq, Ord, Show)
-
+  
 data Param 
   = Param String Type
-  | CommaParam Param [Param]
   deriving(Eq, Ord, Show)
 
-data Stmt 
-  = LetStmt Param Expr
-  | AssgStmt Expr Expr
-  | BreakStmt
-  | BlockStmt [Stmt]
-  | ExprStmt Expr 
+data StructActualParam
+  = StructActualParam String Expr
   deriving(Eq, Ord, Show)
 
 data Program = Program
