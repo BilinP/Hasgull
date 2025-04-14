@@ -41,7 +41,10 @@ tokenizerTests = testGroup "Tokenizer Tests"
   , 
      testCase "Tokenize boolean literals" $
       either assertFailure (@=? [TrueToken, FalseToken]) (tokenize "true false")
-  , 
+  ,
+     testCase "tokenize self.value" $
+     either assertFailure (@?= [LowerCaseSelfToken, DotToken, IdentifierToken "value"]) (tokenize "self.value") 
+  ,
      testCase "Tokenize struct and trait keywords" $
       either assertFailure (@=? [StructToken, IdentifierToken "MyStruct", TraitToken, IdentifierToken "MyTrait"]) (tokenize "struct MyStruct trait MyTrait")
   , 
@@ -144,6 +147,18 @@ parserTests = testGroup "Parser Tests"
       case tokenize "(x + 1) * 2" of
         Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
         Left err -> assertFailure err
+  , testCase "parse self expression" $
+      case tokenize "self" of
+        Right tokens -> parseExpression tokens @?= Right (LowerSelf)
+        Left err -> assertFailure err
+  , testCase "parse dot expressions" $
+      case tokenize "self.value" of
+        Right tokens -> parseExpression tokens @?= Right (DotExpr LowerSelf (Identifier "value"))
+        Left err -> assertFailure err
+  , testCase "parse adding dot exprsessions" $
+      case tokenize "self.value + self.other" of
+        Right tokens -> parseExpression tokens @?= Right (Add (DotExpr LowerSelf (Identifier "value")) (DotExpr LowerSelf (Identifier "other")))
+        Left err -> assertFailure err
   , testCase "Parse type Int" $
       case tokenize "Int" of
         Right tokens -> parseType tokens @?= Right IntType
@@ -170,15 +185,15 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse higher order function with only one type inside Parenthesis" $
       case tokenize "(Int , Boolean) => Int" of
-        Right tokens -> parseType tokens @?= Right (HigherOrderType (CommaType IntType [BooleanType]) IntType)
+        Right tokens -> parseType tokens @?= Right (HigherOrderType ([IntType, BooleanType]) IntType)
+        Left err -> assertFailure err
+  , testCase "Parse higher order function with only one argument" $
+      case tokenize ("(Int) => Int") of
+        Right tokens -> parseType tokens @?= Right (HigherOrderType ([IntType]) IntType)
         Left err -> assertFailure err
   , testCase "Parse params" $
       case tokenize ("a1: Int") of
         Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType) )
-        Left err -> assertFailure err
-  , testCase "Parse multiple params" $
-      case tokenize ("a1: Int , a2: Boolean") of
-        Right tokens -> parseParam tokens @?= Right (CommaParam (Param "a1" IntType) [Param "a2" BooleanType ])
         Left err -> assertFailure err
   , testCase "Parse LetStmt" $
       case tokenize ("let a1: Int = 5;") of
@@ -187,9 +202,33 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("a1 = 5;") of
         Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
         Left err -> assertFailure err
+  , testCase "Parse WhileStmt" $
+      case tokenize ("while(x < 5) {  x = x+1; }") of
+        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1)) ) )
+        Left err -> assertFailure err
+  , testCase "Parse IfStmt" $
+      case tokenize ("if (x <5) x = x * 2 ;") of
+        Right tokens -> parseStmt tokens @?= Right (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) Nothing)
+        Left err -> assertFailure err
+  , testCase "Parse IfStmt with a Else" $
+      case tokenize ("if (x < 5) x = x * 2 ; else x = x + 2;") of
+        Right tokens -> parseStmt tokens @?= Right (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2)))))
+        Left err -> assertFailure err
   , testCase "Parse BreakStmt" $
       case tokenize ("break;") of
         Right tokens -> parseStmt tokens @?= Right (BreakStmt)
+        Left err -> assertFailure err
+  , testCase "Parse PrintLnStmt" $
+      case tokenize ("println(x)") of
+        Right tokens -> parseStmt tokens @?= Right (PrintLnStmt (Identifier "x"))
+        Left err -> assertFailure err
+  , testCase "Parse ReturnStmt" $
+      case tokenize ("return x;") of
+        Right tokens -> parseStmt tokens @?= Right (ReturnStmt ( Just (Identifier "x")) )
+        Left err -> assertFailure err
+  , testCase "Parse ReturnStmt with zero expressions" $
+      case tokenize ("return ;") of
+        Right tokens -> parseStmt tokens @?= Right (ReturnStmt Nothing )
         Left err -> assertFailure err
   , testCase "Parse Block stmts" $
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of

@@ -15,8 +15,8 @@ module Parser.Parser (
 
 import Tokenizer.Token (Token(..))
 import Control.Monad.Combinators.Expr
--- import Control.Applicative
-import Text.Megaparsec hiding (Token) -- Hide Token to avoid ambiguity
+import Control.Applicative
+import Text.Megaparsec hiding (Token, many) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
 import Parser.AST
@@ -24,6 +24,49 @@ import Parser.AST
 
 -- Define the parser type
 type Parser = Parsec Void [Token]
+
+-- Define the expression data type
+data Expr
+  = Identifier String
+  | Int Int
+  | Negative Expr
+  | Add Expr Expr
+  | DotExpr Expr Expr
+  | Sub Expr Expr
+  | LowerSelf 
+  | Multiply Expr Expr
+  | Division Expr Expr       
+  | Equals Expr Expr         
+  | NotEquals Expr Expr      
+  | GreaterThan Expr Expr     
+  | LessThan Expr Expr                                      
+  deriving (Eq, Ord, Show)
+
+data Stmt 
+  = LetStmt Param Expr
+  | AssgStmt Expr Expr
+  | WhileStmt Expr Stmt
+  | IfStmt Expr Stmt (Maybe Stmt)
+  | BreakStmt
+  | PrintLnStmt Expr
+  | BlockStmt [Stmt]
+  | ReturnStmt (Maybe Expr)
+  | ExprStmt Expr 
+  deriving(Eq, Ord, Show)
+
+data Type 
+  = IntType
+  | VoidType
+  | BooleanType
+  | SelfType
+  | StructName String
+  | HigherOrderType [Type] Type
+  deriving(Eq, Ord, Show)
+
+
+data Param 
+  = Param String Type
+  deriving(Eq, Ord, Show)
 
 -- Parse a variable
 pVariable :: Parser Expr
@@ -52,11 +95,11 @@ pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
 pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
 
-pReturn :: Parser Expr
-pReturn = Return <$> (symbol ReturnToken *> pAtom)
+pReturnStmt :: Parser Stmt
+pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
-pPrintLn :: Parser Expr
-pPrintLn = PrintLn <$> (symbol PrintLnToken *> pAtom)
+pPrintLnStmt :: Parser Stmt
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) )
 ---------------------------------------------------------------------------
 
 
@@ -82,13 +125,11 @@ pFunctionType = do
   result <- pType
   return $ HigherOrderType arg result -- Bind the HigherOrder Type with the argument and the resulting type
 
-pArgType :: Parser Type
-pArgType = do
+pArgType :: Parser [Type]
+pArgType = option [] $ do
   firstArg <- pAtomType --Get the single,guranteed type
   restArgs <- many (symbol CommaToken *> pAtomType)
-  case restArgs of
-    [] -> return firstArg
-    _ -> return $ CommaType firstArg restArgs
+  return ( firstArg : restArgs)
 
 pIntType :: Parser Type
 pIntType = IntType <$ symbol IntToken 
@@ -117,15 +158,13 @@ parseStmt = runParser pStmt ""
 ------------------------------------------------------
 
 pParam :: Parser Param
-pParam = try pCommaParam <|> pAtomParam -- Parse through and see if there's any comma token in the stream, backtrack if failed and do atomParam
+pParam = try pAtomParam -- Parse through and see if there's any comma token in the stream, backtrack if failed and do atomParam
 
-pCommaParam :: Parser Param
-pCommaParam = do
+pCommaParam :: Parser [Param]
+pCommaParam = option [] $ do
   firstParam <- pAtomParam -- Get the first param, guranteeded
   restParams <- many (symbol CommaToken *> pAtomParam) -- Return a list of Params, we don't care about the Comma token so its a list
-  case restParams of -- If the above works
-    [] -> return firstParam --if the rest list is empty, return the first param
-    _ -> return $ CommaParam firstParam restParams --Return the param and list of params
+  return (firstParam : restParams)
 
 pAtomParam :: Parser Param
 pAtomParam = Param
@@ -155,15 +194,24 @@ pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
 pBlockStmt :: Parser Stmt
 pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceToken)
 
+pWhileStmt :: Parser Stmt
+pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
+               <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
+
+
+
+
 pStmt :: Parser Stmt
 pStmt = choice 
          [
            pLetStmt,
            pAssgStmt,
-           pExprStmt,
+           pIfStmt,
+           pWhileStmt,
            pBreakStmt,
-           pBlockStmt
-           -- pBlockStmt
+           pPrintLnStmt,
+           pBlockStmt,
+           pReturnStmt
          ]
         
 
@@ -172,34 +220,35 @@ pStmt = choice
 pBoolean :: Parser Expr
 pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ symbol FalseToken)
 
+-- Parse a self expression.
+pSelf :: Parser Expr
+pSelf = LowerSelf <$ symbol LowerCaseSelfToken
+
+
 
 -- Parse parentheses
 pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 -- Parse an if expression
-pIf :: Parser Expr
-pIf = If <$> (symbol IfToken *> pCondition)
-         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+pIfStmt :: Parser Stmt
+pIfStmt = IfStmt <$> (symbol IfToken *> pCondition)
+         <*> pStmt 
          <*> optional pElseOrElseIf
 
 -- Parse an else or else if block #quirk 
-pElseOrElseIf :: Parser Expr
+pElseOrElseIf :: Parser Stmt
 pElseOrElseIf = do
   _ <- symbol ElseToken
   choice
     [ 
-      If <$> (symbol IfToken *> pCondition)
-         <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
+      IfStmt <$> (symbol IfToken *> pCondition)
+         <*> (symbol LBraceToken *> pStmt <* symbol RBraceToken)
          <*> optional pElseOrElseIf
     , 
-      symbol LBraceToken *> pExpr <* symbol RBraceToken
+       pStmt 
     ]
 
--- Parse a while expression
-pWhile :: Parser Expr
-pWhile = While <$> (symbol WhileToken *> pCondition)
-               <*> (symbol LBraceToken *> pExpr <* symbol RBraceToken)
 
 -- Parse a condition (boolean or comparison expression)
 pCondition :: Parser Expr
@@ -215,6 +264,8 @@ condTerm = choice
   , pVariable
   , pInteger
   , pParensCondition
+  , pSelf
+  
   ]
 
 condOperatorTable :: [[Operator Parser Expr]]
@@ -230,22 +281,21 @@ condOperatorTable =
 pTerm :: Parser Expr
 pTerm = choice
   [ pParens
-  , pIf
-  , pWhile
-  , pReturn
-  , pPrintLn
   , pVariable
   , pInteger
+  , pSelf
   ]
 
 -- Parse an expression
 pExpr :: Parser Expr
-pExpr = makeExprParser pTerm operatorTable
+pExpr =  makeExprParser pTerm operatorTable
 
 -- TABLE
 operatorTable :: [[Operator Parser Expr]]
 operatorTable =
-  [ [ prefix SubtractToken Negative ]
+  [ [ prefix SubtractToken Negative ,
+      binary DotToken DotExpr
+    ]
   , [ binary MultiplyToken Multiply
     , binary DivideToken Division
     ]
