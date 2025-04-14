@@ -25,7 +25,9 @@ data Expr
   | Int Int
   | Negative Expr
   | Add Expr Expr
+  | DotExpr Expr Expr
   | Sub Expr Expr
+  | LowerSelf 
   | Multiply Expr Expr
   | Division Expr Expr       
   | Equals Expr Expr         
@@ -212,6 +214,11 @@ pStmt = choice
 pBoolean :: Parser Expr
 pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ symbol FalseToken)
 
+-- Parse a self expression.
+pSelf :: Parser Expr
+pSelf = LowerSelf <$ symbol LowerCaseSelfToken
+
+
 
 -- Parse parentheses
 pParens :: Parser Expr
@@ -251,6 +258,8 @@ condTerm = choice
   , pVariable
   , pInteger
   , pParensCondition
+  , pSelf
+  
   ]
 
 condOperatorTable :: [[Operator Parser Expr]]
@@ -268,16 +277,19 @@ pTerm = choice
   [ pParens
   , pVariable
   , pInteger
+  , pSelf
   ]
 
 -- Parse an expression
 pExpr :: Parser Expr
-pExpr = makeExprParser pTerm operatorTable
+pExpr =  makeExprParser pTerm operatorTable
 
 -- TABLE
 operatorTable :: [[Operator Parser Expr]]
 operatorTable =
-  [ [ prefix SubtractToken Negative ]
+  [ [ prefix SubtractToken Negative ,
+      binary DotToken DotExpr
+    ]
   , [ binary MultiplyToken Multiply
     , binary DivideToken Division
     ]

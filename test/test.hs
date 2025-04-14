@@ -40,7 +40,10 @@ tokenizerTests = testGroup "Tokenizer Tests"
   , 
      testCase "Tokenize boolean literals" $
       either assertFailure (@=? [TrueToken, FalseToken]) (tokenize "true false")
-  , 
+  ,
+     testCase "tokenize self.value" $
+     either assertFailure (@?= [LowerCaseSelfToken, DotToken, IdentifierToken "value"]) (tokenize "self.value") 
+  ,
      testCase "Tokenize struct and trait keywords" $
       either assertFailure (@=? [StructToken, IdentifierToken "MyStruct", TraitToken, IdentifierToken "MyTrait"]) (tokenize "struct MyStruct trait MyTrait")
   , 
@@ -142,6 +145,18 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse complex expression with variables" $
       case tokenize "(x + 1) * 2" of
         Right tokens -> parseExpression tokens @?= Right (Multiply (Add (Identifier "x") (Int 1)) (Int 2))
+        Left err -> assertFailure err
+  , testCase "parse self expression" $
+      case tokenize "self" of
+        Right tokens -> parseExpression tokens @?= Right (LowerSelf)
+        Left err -> assertFailure err
+  , testCase "parse dot expressions" $
+      case tokenize "self.value" of
+        Right tokens -> parseExpression tokens @?= Right (DotExpr LowerSelf (Identifier "value"))
+        Left err -> assertFailure err
+  , testCase "parse adding dot exprsessions" $
+      case tokenize "self.value + self.other" of
+        Right tokens -> parseExpression tokens @?= Right (Add (DotExpr LowerSelf (Identifier "value")) (DotExpr LowerSelf (Identifier "other")))
         Left err -> assertFailure err
   , testCase "Parse type Int" $
       case tokenize "Int" of
