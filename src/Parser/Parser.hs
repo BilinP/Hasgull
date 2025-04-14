@@ -42,7 +42,7 @@ data Stmt
   | BreakStmt
   | PrintLnStmt Expr
   | BlockStmt [Stmt]
-  | ReturnStmt Expr
+  | ReturnStmt (Maybe Expr)
   | ExprStmt Expr 
   deriving(Eq, Ord, Show)
 
@@ -89,7 +89,7 @@ pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
 
 pReturnStmt :: Parser Stmt
-pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> pAtom <* symbol SemiColonToken)
+pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
 pPrintLnStmt :: Parser Stmt
 pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) )

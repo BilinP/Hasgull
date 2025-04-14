@@ -212,7 +212,11 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse ReturnStmt" $
       case tokenize ("return x;") of
-        Right tokens -> parseStmt tokens @?= Right (ReturnStmt (Identifier "x"))
+        Right tokens -> parseStmt tokens @?= Right (ReturnStmt ( Just (Identifier "x")) )
+        Left err -> assertFailure err
+  , testCase "Parse ReturnStmt with zero expressions" $
+      case tokenize ("return ;") of
+        Right tokens -> parseStmt tokens @?= Right (ReturnStmt Nothing )
         Left err -> assertFailure err
   , testCase "Parse Block stmts" $
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
