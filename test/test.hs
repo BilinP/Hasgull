@@ -71,18 +71,6 @@ tokenizerTests = testGroup "Tokenizer Tests"
     testCase "Tokenize WhileIf" $
      either assertFailure (@=? [IdentifierToken "WhileIf"]) (tokenize "WhileIf")
   ,
-    testCase "Parse ForStmt" $
-      case tokenize ("for(i = 0; i < 10; i = i + 1) { println(i); }") of
-        Right tokens ->
-          parseStmt tokens @?= Right (
-            ForStmt 
-              (AssgStmt (Identifier "i") (Int 0)) 
-              (LessThan (Identifier "i") (Int 10)) 
-              (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1))) 
-              (PrintLnStmt (Identifier "i"))
-          )
-        Left err -> assertFailure err
-  ,
      testCase "Unrecognized symbol error message" $
       tokenize "$" @?= Left "Unrecognized symbol near here `: $`"
   ,
@@ -217,6 +205,17 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse WhileStmt" $
       case tokenize ("while(x < 5) {  x = x+1; }") of
         Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1)) ) )
+        Left err -> assertFailure err
+  , testCase "Parse ForStmt" $
+      case tokenize ("for(i = 0; i < 10; i = i + 1) { println(i); }") of
+        Right tokens ->
+          parseStmt tokens @?= Right (
+            ForStmt 
+              (AssgStmt (Identifier "i") (Int 0)) 
+              (LessThan (Identifier "i") (Int 10)) 
+              (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1))) 
+              (PrintLnStmt (Identifier "i"))
+          )
         Left err -> assertFailure err
   , testCase "Parse IfStmt" $
       case tokenize ("if (x <5) x = x * 2 ;") of
