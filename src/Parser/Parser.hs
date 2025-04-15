@@ -48,6 +48,7 @@ data Stmt
   = LetStmt Param Expr
   | AssgStmt Expr Expr
   | WhileStmt Expr Stmt
+  | ForStmt Stmt Expr Stmt Stmt
   | IfStmt Expr Stmt (Maybe Stmt)
   | BreakStmt
   | PrintLnStmt Expr
@@ -80,6 +81,8 @@ pCommaExp = option [] $ do
 --Call expression parser
 pCallExp :: Parser Expr
 pCallExp = foldl Call <$> pExpr <*> many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
+
+
 
 
 -- Parse a variable
@@ -213,6 +216,17 @@ pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
                <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
 
 
+pForStmt :: Parse Stmt
+pForStmt = do
+  _ <- symbol ForToken
+  _ <- symbol LParenToken
+  initStmt <- pLetStmt <|> pAssgStmt
+  condExpr <- pExpr <* symbol SemiColonToken
+  postStmt <- pAssgStmt
+  _ <- symbol RParenToken
+  bodyStmt <- pStmt
+  return $ ForStmt initStmt condExpr postStmt bodyStmt
+  
 
 
 pStmt :: Parser Stmt
@@ -222,6 +236,7 @@ pStmt = choice
            pAssgStmt,
            pIfStmt,
            pWhileStmt,
+           pForStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,
