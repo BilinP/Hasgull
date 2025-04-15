@@ -170,7 +170,7 @@ pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
                <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
 
 
-pForStmt :: Parse Stmt
+pForStmt :: Parser Stmt
 pForStmt = do
   _ <- symbol ForToken
   _ <- symbol LParenToken
