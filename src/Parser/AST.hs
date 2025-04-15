@@ -22,6 +22,7 @@ data Expr
   | Negative Expr
   | Add Expr Expr
   | DotExpr Expr Expr
+  | Call Expr [Expr]
   | Sub Expr Expr
   | LowerSelf 
   | Multiply Expr Expr
