@@ -37,6 +37,8 @@ pCallExp :: Parser Expr
 pCallExp = foldl Call <$> pExpr <*> many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
 
 
+
+
 -- Parse a variable
 pVariable :: Parser Expr
 pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
@@ -168,6 +170,17 @@ pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
                <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
 
 
+pForStmt :: Parse Stmt
+pForStmt = do
+  _ <- symbol ForToken
+  _ <- symbol LParenToken
+  initStmt <- pLetStmt <|> pAssgStmt
+  condExpr <- pExpr <* symbol SemiColonToken
+  postStmt <- pAssgStmt
+  _ <- symbol RParenToken
+  bodyStmt <- pStmt
+  return $ ForStmt initStmt condExpr postStmt bodyStmt
+  
 
 
 pStmt :: Parser Stmt

@@ -37,6 +37,7 @@ data Stmt
   = LetStmt Param Expr
   | AssgStmt Expr Expr
   | WhileStmt Expr Stmt
+  | ForStmt Stmt Expr Stmt Stmt
   | IfStmt Expr Stmt (Maybe Stmt)
   | BreakStmt
   | PrintLnStmt Expr
