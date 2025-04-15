@@ -27,6 +27,8 @@ library
   exposed-modules:
       Generation.Generation
       Lib
+      Parser.AST
+      Parser.HelperFuncs
       Parser.Parser
       Tokenizer.Token
       Tokenizer.Tokenizer
