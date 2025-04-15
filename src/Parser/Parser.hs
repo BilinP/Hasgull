@@ -196,6 +196,7 @@ pStmt = choice
            pAssgStmt,
            pIfStmt,
            pWhileStmt,
+           pExprStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,
