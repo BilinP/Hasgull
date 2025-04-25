@@ -86,7 +86,7 @@ pAtom :: Parser Expr
 pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
 
 pParensAtom :: Parser Expr
-pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
+pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 pReturnStmt :: Parser Stmt
 pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
