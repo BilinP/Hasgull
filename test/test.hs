@@ -6,7 +6,7 @@ import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 
 main :: IO ()
-main = defaultMain tests
+main = defaultMain parserTests
 
 
 tests :: TestTree
@@ -204,18 +204,16 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse WhileStmt" $
       case tokenize ("while(x < 5) {  x = x+1; }") of
-        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1)) ) )
+        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (BlockStmt [AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1))]))
         Left err -> assertFailure err
   , testCase "Parse ForStmt" $
       case tokenize ("for(i = 0; i < 10; i = i + 1) { println(i); }") of
         Right tokens ->
-          parseStmt tokens @?= Right (
-            ForStmt 
-              (AssgStmt (Identifier "i") (Int 0)) 
-              (LessThan (Identifier "i") (Int 10)) 
-              (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1))) 
-              (PrintLnStmt (Identifier "i"))
-          )
+          parseStmt tokens @?= Right (ForStmt 
+          (AssgStmt (Identifier "i") (Int 0)) 
+          (LessThan (Identifier "i") (Int 10)) 
+          (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1))) 
+          (BlockStmt [PrintLnStmt (Identifier "i")]))
         Left err -> assertFailure err
   , testCase "Parse IfStmt" $
       case tokenize ("if (x <5) x = x * 2 ;") of
@@ -230,7 +228,7 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseStmt tokens @?= Right (BreakStmt)
         Left err -> assertFailure err
   , testCase "Parse PrintLnStmt" $
-      case tokenize ("println(x)") of
+      case tokenize ("println(x);") of
         Right tokens -> parseStmt tokens @?= Right (PrintLnStmt (Identifier "x"))
         Left err -> assertFailure err
   , testCase "Parse ReturnStmt" $
@@ -433,7 +431,7 @@ parserTests = testGroup "Parser Tests"
   , 
       testCase "Parse dot expression plus call" $
       case tokenize ("obj.method2(a,b)(a)") of
-        Right tokens -> parseExpression tokens @?= Right (Call (Call (DotExpr (Identifier "obj") (Identifier "method2")) [Identifier "a",Identifier "b"]) [Identifier "a"])
+        Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a",Identifier "b"]) [Identifier "a"]))
         Left err -> assertFailure err
 
   ]     

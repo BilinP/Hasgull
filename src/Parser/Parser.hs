@@ -22,6 +22,7 @@ import Data.Void
 import Parser.AST
 
 
+
 -- Define the parser type
 type Parser = Parsec Void [Token]
  
@@ -34,7 +35,11 @@ pCommaExp = option [] $ do
 
 --Call expression parser
 pCallExp :: Parser Expr
-pCallExp = foldl Call <$> pExpr <*> many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
+pCallExp = do
+  func <- pSingleTerm
+  args <- many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
+  pure (foldl Call func args) --Pure is a wrapper that succeeds without consuming input, at least that's what the documentation says
+
 
 
 
@@ -64,13 +69,13 @@ pAtom :: Parser Expr
 pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
 
 pParensAtom :: Parser Expr
-pParensAtom = between (symbol LParenToken) (symbol RParenToken) pAtom
+pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 pReturnStmt :: Parser Stmt
 pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
 pPrintLnStmt :: Parser Stmt
-pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) )
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) ) <*  symbol SemiColonToken
 ---------------------------------------------------------------------------
 
 
@@ -154,6 +159,11 @@ pAssgStmt :: Parser Stmt
 pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
                      <*> (pExpr <* symbol SemiColonToken)
 
+pAssgStmtSemiLess :: Parser Stmt
+pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
+                     <*> pExpr 
+                     
+
 pExprStmt :: Parser Stmt
 pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
 
@@ -167,7 +177,8 @@ pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceT
 
 pWhileStmt :: Parser Stmt
 pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
-               <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
+               <*> pBlockStmt
+
 
 
 pForStmt :: Parser Stmt
@@ -176,7 +187,7 @@ pForStmt = do
   _ <- symbol LParenToken
   initStmt <- pLetStmt <|> pAssgStmt
   condExpr <- pExpr <* symbol SemiColonToken
-  postStmt <- pAssgStmt
+  postStmt <- pAssgStmtSemiLess
   _ <- symbol RParenToken
   bodyStmt <- pStmt
   return $ ForStmt initStmt condExpr postStmt bodyStmt
@@ -190,6 +201,7 @@ pStmt = choice
            pAssgStmt,
            pIfStmt,
            pWhileStmt,
+           pForStmt,
            pExprStmt,
            pBreakStmt,
            pPrintLnStmt,
@@ -260,14 +272,15 @@ condOperatorTable =
     ]
   ]
 
-
 pTerm :: Parser Expr
-pTerm = choice
-  [ pParens
-  , pCallExp
-  , pVariable
+pTerm = pCallExp <|> pSingleTerm
+
+pSingleTerm :: Parser Expr
+pSingleTerm = choice
+  [ pParens 
   , pInteger
   , pSelf
+  , pVariable
   ]
 
 -- Parse an expression
