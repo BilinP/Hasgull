@@ -4,9 +4,11 @@ import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
+import Generation.Generation (translateStmt,translateType, translateParam, translateExpr, translateStmt)
+
 
 main :: IO ()
-main = defaultMain tests
+main = defaultMain generatorTests
 
 
 tests :: TestTree
@@ -433,5 +435,38 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("obj.method2(a,b)(a)") of
         Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a",Identifier "b"]) [Identifier "a"]))
         Left err -> assertFailure err
-
   ]     
+  
+generatorTests :: TestTree
+generatorTests = testGroup "Generator Tests"
+  [
+    testCase "Translate BreakStmt" $
+      translateStmt BreakStmt @?= "break;",
+    testCase "Translate Param" $
+      translateParam (Param "a1" IntType) @?= "a1",
+    testCase "Translate Int Expr" $
+      translateExpr (Int 5) @?= "5",
+    testCase "Translate Identifer" $
+      translateExpr (Identifier "CAIN") @?= "CAIN",
+    testCase "Translate Add with two Ints" $
+      translateExpr (Add (Int 7) (Int 7)) @?= "7 + 7",
+    testCase "Translate Add that is one add + one int ie 3 + 3 + 3" $
+      translateExpr (Add (Add (Int 3) (Int 3)) (Identifier "bill"))  @?= "3 + 3 + bill",
+    testCase "Translate a Dot Expression into a string" $
+      translateExpr (DotExpr LowerSelf (Identifier "value")) @?= "self.value",
+    testCase "Translate Multiply (x + 2 ) * 2" $
+      translateExpr (Multiply (Add (Identifier "x") (Int 2)) (Int 2)) @?= "x + 2 * 2",
+    testCase "Translate a CallExp" $
+      translateExpr(DotExpr (Identifier "obj") (Call (Identifier "add") [Identifier "a", Identifier "b"] ) ) @?= "obj.add(a,b)",
+    testCase "Translate let a1: Int = 5;" $
+      translateStmt (LetStmt (Param "a1" IntType) (Int 5)) @?= "let a1 = 5",
+    testCase "translate blockstmt {let a: Int = 10; a = a + 5; }" $
+      translateStmt (BlockStmt [LetStmt (Param "a" IntType) (Int 10), AssgStmt (Identifier "a") (Add (Identifier "a" ) (Int 5) )]) @?= "{ let a = 10 \n a = a + 5 }",
+    testCase "while stmt translation" $
+      translateStmt (WhileStmt (LessThan (Identifier "x") (Int 5)) (BlockStmt [AssgStmt (Identifier"x") (Add (Identifier "x") (Int 1) )])) @?= "while(x < 5) { x = x + 1 }",
+    testCase "if stmt translation" $
+      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) Nothing) @?= "if(x < 5) x = x * 2",
+    testCase "if else stmt translation" $
+      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2))))) @?= "if(x < 5) x = x * 2  else x = x + 2",
+      
+    ]
