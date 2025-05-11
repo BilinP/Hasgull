@@ -4,7 +4,7 @@ import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
-import Generation.Generation (translateStmt,translateType, translateParam, translateExpr, translateStmt)
+import Generation.Generation (translateStmt,translateType, translateParam, translateExpr)
 
 
 main :: IO ()
@@ -467,6 +467,5 @@ generatorTests = testGroup "Generator Tests"
     testCase "if stmt translation" $
       translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) Nothing) @?= "if(x < 5) x = x * 2",
     testCase "if else stmt translation" $
-      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2))))) @?= "if(x < 5) x = x * 2  else x = x + 2",
-      
+      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2))))) @?= "if(x < 5) x = x * 2  else x = x + 2"
     ]

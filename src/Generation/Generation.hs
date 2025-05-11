@@ -10,10 +10,15 @@ import Data.List(intercalate)
 
 -- Code Generation stuff
 -- Since our "target" langauge is javascript, I'm honestly just testing first if we can take an AST and 
--- write to a string, then idk put into a javascript file   .
+-- write to a string, then idk put into a javascript file   
 
+-- Thoughts
+-- Have lists constructed at block stmts or equivalents that get passed into translate calls?
+-- If it's a letstmt or some form of intilizer, we push into list 
+-- Any call or AST part that isn't an immediate, we check that list, throw exception if not.
 
-
+-- Translate Type
+-- translate an Type AST node into a string of an equivalent javascript expression
 translateType :: Type -> String
 translateType t = case t of 
     IntType -> "int"
@@ -22,12 +27,12 @@ translateType t = case t of
     SelfType -> "Self"
     StructName name -> name
     HigherOrderType types returnType -> 
-        let typesStr = intercalate "," (map translateType types)
+        let typesStr = intercalate ", " (map translateType types) -- Intercalate is used just so we can do type, type, type
             returnTypeStr = translateType returnType
         in typesStr ++ " => " ++ returnTypeStr
 
 
-
+--Translate an expression AST node into a string of an equivalent javascript expression
 translateExpr :: Expr -> String
 translateExpr expr = case expr of
     Identifier name -> name
@@ -45,11 +50,12 @@ translateExpr expr = case expr of
     GreaterThan e1 e2 -> translateExpr e1 ++ " > " ++ translateExpr e2
     LessThan e1 e2 -> translateExpr e1 ++ " < " ++ translateExpr e2
 
-
+-- Translate a Param AST node into a string of an equivalent javascript expression
 translateParam :: Param -> String
 translateParam (Param name t) = --Since we are converting to javascript, then why would we include the type? The paraser should already have done the check on typing
     name
 
+-- Translate a Stmt AST node into a string of an equivalent javascript expression
 translateStmt :: Stmt -> String
 translateStmt stmt = case stmt of
     BreakStmt -> "break;"
