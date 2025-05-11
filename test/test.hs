@@ -6,7 +6,7 @@ import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 
 main :: IO ()
-main = defaultMain parserTests
+main = defaultMain tests
 
 
 tests :: TestTree
