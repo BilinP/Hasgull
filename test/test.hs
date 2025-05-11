@@ -2,7 +2,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
-import Parser.Parser (Expr(..) ,Type(..), Param(..), Stmt(..) ,parseExpression, parseType, parseParam, parseStmt)
+import Parser.AST
+import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 
 main :: IO ()
 main = defaultMain tests
@@ -203,7 +204,16 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   , testCase "Parse WhileStmt" $
       case tokenize ("while(x < 5) {  x = x+1; }") of
-        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1)) ) )
+        Right tokens -> parseStmt tokens @?= Right (WhileStmt (LessThan (Identifier "x") (Int 5)) (BlockStmt [AssgStmt (Identifier "x") (Add (Identifier "x") (Int 1))]))
+        Left err -> assertFailure err
+  , testCase "Parse ForStmt" $
+      case tokenize ("for(i = 0; i < 10; i = i + 1) { println(i); }") of
+        Right tokens ->
+          parseStmt tokens @?= Right (ForStmt 
+          (AssgStmt (Identifier "i") (Int 0)) 
+          (LessThan (Identifier "i") (Int 10)) 
+          (AssgStmt (Identifier "i") (Add (Identifier "i") (Int 1))) 
+          (BlockStmt [PrintLnStmt (Identifier "i")]))
         Left err -> assertFailure err
   , testCase "Parse IfStmt" $
       case tokenize ("if (x <5) x = x * 2 ;") of
@@ -218,7 +228,7 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseStmt tokens @?= Right (BreakStmt)
         Left err -> assertFailure err
   , testCase "Parse PrintLnStmt" $
-      case tokenize ("println(x)") of
+      case tokenize ("println(x);") of
         Right tokens -> parseStmt tokens @?= Right (PrintLnStmt (Identifier "x"))
         Left err -> assertFailure err
   , testCase "Parse ReturnStmt" $
@@ -233,4 +243,195 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("{let a1: Int = 5; a1 = 6;}") of
         Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
         Left err -> assertFailure err
+  , testCase "Parse TraitDef with a single abstract method" $
+      case tokenize "trait MyTrait { method doIt(x: Int): Void; }" of
+        Right tokens ->
+          pTraitDef tokens @?= Right
+            (TraitDef
+               { traitName = "MyTrait"
+               , traitAbsMethodDef =
+                   [ AbsMethodDef
+                       { abMethName = "doIt"
+                       , abMethParameters = Param "x" IntType
+                       , abMethReturnType = VoidType
+                       }
+                   ]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse AbsMethodDef" $
+      case tokenize "method doIt(x: Int): Void;" of
+        Right tokens ->
+          pAbsMethodDef tokens @?= Right
+            (AbsMethodDef
+               { abMethName = "doIt"
+               , abMethParameters = Param "x" IntType
+               , abMethReturnType = VoidType
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse StructDef with a single field" $
+      case tokenize "struct Car { brand: Int }" of
+        Right tokens ->
+          pStructDef tokens @?= Right
+            (StructDef
+               { strucName = "Car"
+               , strucFields = Param "brand" IntType
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse ImplDef with one concrete method" $
+      case tokenize "impl MyTrait for Car { method doIt(x: Int): Void { break; } }" of
+        Right tokens ->
+          pImplDef tokens @?= Right
+            (ImplDef
+               { implTraitName = "MyTrait"
+               , iForType = StructName "Car"
+               , iMethods =
+                   [ ConcMethodDef
+                       { cmName = "doIt"
+                       , cmParameters = Param "x" IntType
+                       , cmReturnType = VoidType
+                       , cmBody = [BreakStmt]
+                       }
+                   ]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse ConcMethodDef alone" $
+      case tokenize "method setVal(x: Int): Void { x = 5; }" of
+        Right tokens ->
+          pConcMethodDef tokens @?= Right
+            (ConcMethodDef
+               { cmName = "setVal"
+               , cmParameters = Param "x" IntType
+               , cmReturnType = VoidType
+               , cmBody = [AssgStmt (Identifier "x") (Int 5)]
+               })
+        Left err -> assertFailure err
+
+  , testCase "Parse FuncDef with a single statement" $
+      case tokenize "func main(a: Int): Void { a = 5; }" of
+        Right tokens ->
+          pFuncDef tokens @?= Right
+            (FuncDef
+               { funcName = "main"
+               , funcParameters = Param "a" IntType
+               , funcReturnType = VoidType
+               , funcBody = [AssgStmt (Identifier "a") (Int 5)]
+               })
+        Left err -> assertFailure err
+  , testCase "Parse ProgramItem with StructDef" $
+      case tokenize "struct Person { name: Int }" of
+        Right tokens ->
+          pProgramItem tokens @?= Right
+            (PI_Struct (StructDef
+               { strucName   = "Person"
+               , strucFields = Param "name" IntType
+               }))
+        Left err ->
+          assertFailure err
+  , testCase "Parse Program with one struct and one statement" $
+      case tokenize "struct Person { age: Int } let age: Int = 21;" of
+        Right tokens ->
+          pProgram tokens @?= Right
+            (Program
+               { progItems =
+                   [ PI_Struct (StructDef
+                       { strucName   = "Person"
+                       , strucFields = Param "age" IntType
+                       })
+                   ]
+               , progStmts =
+                   [ LetStmt (Param "age" IntType) (Int 21) ]
+               })
+        Left err ->
+          assertFailure err
+  , testCase "Parse Program with multiple items and multiple statements" $
+  case tokenize "trait MyTrait { method doIt(x: Int): Void; } \
+               \struct Car { brand: Int } \
+               \let a: Int = 42; \
+               \a = a + 1;" of
+    Right tokens ->
+      pProgram tokens @?= Right
+        (Program
+          { progItems =
+              [ PI_Trait (TraitDef
+                  { traitName = "MyTrait"
+                  , traitAbsMethodDef =
+                      [ AbsMethodDef
+                          { abMethName       = "doIt"
+                          , abMethParameters = Param "x" IntType
+                          , abMethReturnType = VoidType
+                          }
+                      ]
+                  })
+              , PI_Struct (StructDef
+                  { strucName   = "Car"
+                  , strucFields = Param "brand" IntType
+                  })
+              ]
+          , progStmts =
+              [ LetStmt (Param "a" IntType) (Int 42)
+              , AssgStmt (Identifier "a") (Add (Identifier "a") (Int 1))
+              ]
+          })
+    Left err -> assertFailure err
+
+  , testCase "Parse Program with all 4 different Program Items and Two Statements" $
+  case tokenize "trait MyTrait { method doIt(x: Int): Void; } \
+               \struct Car { brand: Int } \
+               \impl MyTrait for Car { method doIt(x: Int): Void { break; } } \
+               \func main(a: Int): Void { return; } \
+               \let a: Int = 42; \
+               \a = a + 1;" of
+    Right tokens ->
+      pProgram tokens @?= Right
+        (Program
+          { progItems =
+              [ PI_Trait (TraitDef
+                  { traitName = "MyTrait"
+                  , traitAbsMethodDef =
+                      [ AbsMethodDef
+                          { abMethName       = "doIt"
+                          , abMethParameters = Param "x" IntType
+                          , abMethReturnType = VoidType
+                          }
+                      ]
+                  })
+              , PI_Struct (StructDef
+                  { strucName   = "Car"
+                  , strucFields = Param "brand" IntType
+                  })
+              , PI_Impl (ImplDef
+                  { implTraitName = "MyTrait"
+                  , iForType      = StructName "Car"
+                  , iMethods      =
+                      [ ConcMethodDef
+                          { cmName       = "doIt"
+                          , cmParameters = Param "x" IntType
+                          , cmReturnType = VoidType
+                          , cmBody       = [BreakStmt]
+                          }
+                      ]
+                  })
+              , PI_Func (FuncDef
+                  { funcName       = "main"
+                  , funcParameters = Param "a" IntType
+                  , funcReturnType = VoidType
+                  , funcBody       = [ReturnStmt Nothing]
+                  })
+              ]
+          , progStmts =
+              [ LetStmt (Param "a" IntType) (Int 42)
+              , AssgStmt (Identifier "a") (Add (Identifier "a") (Int 1))
+              ]
+          })
+    Left err -> assertFailure err
+  , 
+      testCase "Parse dot expression plus call" $
+      case tokenize ("obj.method2(a,b)(a)") of
+        Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a",Identifier "b"]) [Identifier "a"]))
+        Left err -> assertFailure err
+
   ]     

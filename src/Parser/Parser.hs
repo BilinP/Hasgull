@@ -1,12 +1,16 @@
 module Parser.Parser (
-  Expr(..),
-  Type(..),
-  Param(..),
-  Stmt(..),
   parseExpression,
   parseType,
   parseParam,
-  parseStmt
+  parseStmt,
+  pTraitDef,
+  pAbsMethodDef,
+  pStructDef,
+  pImplDef,
+  pConcMethodDef,
+  pFuncDef,
+  pProgramItem,
+  pProgram
 ) where
 
 import Tokenizer.Token (Token(..))
@@ -15,52 +19,30 @@ import Control.Applicative
 import Text.Megaparsec hiding (Token, many) -- Hide Token to avoid ambiguity
 import Text.Megaparsec.Char()
 import Data.Void
+import Parser.AST
+
+
 
 -- Define the parser type
 type Parser = Parsec Void [Token]
+ 
 
--- Define the expression data type
-data Expr
-  = Identifier String
-  | Int Int
-  | Negative Expr
-  | Add Expr Expr
-  | DotExpr Expr Expr
-  | Sub Expr Expr
-  | LowerSelf 
-  | Multiply Expr Expr
-  | Division Expr Expr       
-  | Equals Expr Expr         
-  | NotEquals Expr Expr      
-  | GreaterThan Expr Expr     
-  | LessThan Expr Expr                                      
-  deriving (Eq, Ord, Show)
+pCommaExp :: Parser [Expr]
+pCommaExp = option [] $ do
+    first <- pExpr
+    rest  <- many (symbol CommaToken *> pExpr)
+    return (first : rest)
 
-data Stmt 
-  = LetStmt Param Expr
-  | AssgStmt Expr Expr
-  | WhileStmt Expr Stmt
-  | IfStmt Expr Stmt (Maybe Stmt)
-  | BreakStmt
-  | PrintLnStmt Expr
-  | BlockStmt [Stmt]
-  | ReturnStmt (Maybe Expr)
-  | ExprStmt Expr 
-  deriving(Eq, Ord, Show)
-
-data Type 
-  = IntType
-  | VoidType
-  | BooleanType
-  | SelfType
-  | StructName String
-  | HigherOrderType [Type] Type
-  deriving(Eq, Ord, Show)
+--Call expression parser
+pCallExp :: Parser Expr
+pCallExp = do
+  func <- pSingleTerm
+  args <- many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
+  pure (foldl Call func args) --Pure is a wrapper that succeeds without consuming input, at least that's what the documentation says
 
 
-data Param 
-  = Param String Type
-  deriving(Eq, Ord, Show)
+
+
 
 -- Parse a variable
 pVariable :: Parser Expr
@@ -79,8 +61,9 @@ isIntegerToken :: Token -> Bool
 isIntegerToken (IntegerToken _) = True
 isIntegerToken _ = False
 
-
-
+-- checkMatching Token
+checkMatchingToken :: Token -> Parser Token
+checkMatchingToken t = label (show t) $ satisfy (== t)
 ---------------------------------------------------------------------------
 pAtom :: Parser Expr
 pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
@@ -92,7 +75,7 @@ pReturnStmt :: Parser Stmt
 pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
 pPrintLnStmt :: Parser Stmt
-pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) )
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) ) <*  symbol SemiColonToken
 ---------------------------------------------------------------------------
 
 
@@ -142,6 +125,11 @@ pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken na
 pParenType :: Parser Type
 pParenType = between (symbol LParenToken) (symbol RParenToken) pType
 
+parseParam :: [Token] -> Either (ParseErrorBundle [Token] Void ) Param
+parseParam = runParser pParam ""
+
+parseStmt :: [Token] -> Either (ParseErrorBundle [Token] Void) Stmt
+parseStmt = runParser pStmt ""
 
 ------------------------------------------------------
 
@@ -171,6 +159,11 @@ pAssgStmt :: Parser Stmt
 pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
                      <*> (pExpr <* symbol SemiColonToken)
 
+pAssgStmtSemiLess :: Parser Stmt
+pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
+                     <*> pExpr 
+                     
+
 pExprStmt :: Parser Stmt
 pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
 
@@ -184,9 +177,21 @@ pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceT
 
 pWhileStmt :: Parser Stmt
 pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
-               <*> (symbol LBraceToken *>  pStmt <* symbol RBraceToken)
+               <*> pBlockStmt
 
 
+
+pForStmt :: Parser Stmt
+pForStmt = do
+  _ <- symbol ForToken
+  _ <- symbol LParenToken
+  initStmt <- pLetStmt <|> pAssgStmt
+  condExpr <- pExpr <* symbol SemiColonToken
+  postStmt <- pAssgStmtSemiLess
+  _ <- symbol RParenToken
+  bodyStmt <- pStmt
+  return $ ForStmt initStmt condExpr postStmt bodyStmt
+  
 
 
 pStmt :: Parser Stmt
@@ -196,6 +201,8 @@ pStmt = choice
            pAssgStmt,
            pIfStmt,
            pWhileStmt,
+           pForStmt,
+           pExprStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,
@@ -265,13 +272,15 @@ condOperatorTable =
     ]
   ]
 
-
 pTerm :: Parser Expr
-pTerm = choice
-  [ pParens
-  , pVariable
+pTerm = pCallExp <|> pSingleTerm
+
+pSingleTerm :: Parser Expr
+pSingleTerm = choice
+  [ pParens 
   , pInteger
   , pSelf
+  , pVariable
   ]
 
 -- Parse an expression
@@ -317,11 +326,163 @@ parseExpression = runParser pExpr ""
 parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
 
-parseParam :: [Token] -> Either (ParseErrorBundle [Token] Void ) Param
-parseParam = runParser pParam ""
+---------------------------------------------------------------------------------
+--NOTES I did the opposite in terms of naming scheme from you guys
+-- this was by accident
 
-parseStmt :: [Token] -> Either (ParseErrorBundle [Token] Void) Stmt
-parseStmt = runParser pStmt ""
+-- | Parse a TraitDef from a list of tokens
+pTraitDef :: [Token] -> Either (ParseErrorBundle [Token] Void) TraitDef
+pTraitDef = runParser parseTraitDef ""
 
+-- | Parse an AbsMethodDef from a list of tokens
+pAbsMethodDef :: [Token] -> Either (ParseErrorBundle [Token] Void) AbsMethodDef
+pAbsMethodDef = runParser parseAbsMethodDef ""
+
+-- | Parse a StructDef from a list of tokens
+pStructDef :: [Token] -> Either (ParseErrorBundle [Token] Void) StructDef
+pStructDef = runParser parseStructDef ""
+
+-- | Parse an ImplDef from a list of tokens
+pImplDef :: [Token] -> Either (ParseErrorBundle [Token] Void) ImplDef
+pImplDef = runParser parseImplDef ""
+
+-- | Parse a ConcMethodDef from a list of tokens
+pConcMethodDef :: [Token] -> Either (ParseErrorBundle [Token] Void) ConcMethodDef
+pConcMethodDef = runParser parseConcMethodDef ""
+
+-- | Parse a FuncDef from a list of tokens
+pFuncDef :: [Token] -> Either (ParseErrorBundle [Token] Void) FuncDef
+pFuncDef = runParser parseFuncDef ""
+
+-- | Parse a ProgramItem from a list of tokens
+pProgramItem :: [Token] -> Either (ParseErrorBundle [Token] Void) ProgramItem
+pProgramItem = runParser parseProgramItem ""
+
+-- | Parse a Program from a list of tokens
+pProgram :: [Token] -> Either (ParseErrorBundle [Token] Void) Program
+pProgram = runParser parseProgram ""
+-----------------------------------------------------------------------------------------
+
+
+pIdentifier :: Parser String
+pIdentifier = do
+  tok <- satisfy isIdentifierToken
+  case tok of
+    IdentifierToken name -> pure name
+    _ -> fail "Expected identifier"
+
+pAtomStructActualParam :: Parser StructActualParam
+pAtomStructActualParam = StructActualParam
+        <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+        <* symbol ColonToken
+        <*> pExpr
+
+pStructActualParam :: Parser StructActualParam
+pStructActualParam = try pAtomStructActualParam
+
+pStructActualParams :: Parser [StructActualParam]
+pStructActualParams = option [] $ do
+  firstParam <- pAtomStructActualParam
+  restParams <- many (symbol CommaToken *> pAtomStructActualParam)
+  return (firstParam : restParams)
+
+-- Trait Parser
+parseTraitDef :: Parser TraitDef
+parseTraitDef =
+  TraitDef
+    <$ checkMatchingToken TraitToken
+    <*> pIdentifier
+    <* checkMatchingToken LBraceToken
+    <*> many parseAbsMethodDef
+    <* checkMatchingToken RBraceToken
+
+-- Abstract method Definition Parser
+parseAbsMethodDef :: Parser AbsMethodDef
+parseAbsMethodDef =
+  AbsMethodDef
+    <$ checkMatchingToken MethodToken
+    <*> pIdentifier
+    <* checkMatchingToken LParenToken
+    <*> pParam
+    <* checkMatchingToken RParenToken
+    <* checkMatchingToken ColonToken
+    <*> pType
+    <* checkMatchingToken SemiColonToken
+
+
+-- Structdef parser
+-- structdef ::= `struct` structname `{` comma_param `}`
+parseStructDef :: Parser StructDef
+parseStructDef =
+  StructDef
+    <$ checkMatchingToken StructToken
+    <*> pIdentifier
+    <* checkMatchingToken LBraceToken
+    <*> pParam
+    <* checkMatchingToken RBraceToken
+
+-- ImplDef Parser
+-- impldef ::= `impl` traitname `for` type `{` conc_methoddef* `}`
+parseImplDef :: Parser ImplDef
+parseImplDef =
+  ImplDef
+    <$ checkMatchingToken ImplToken
+    <*> pIdentifier
+    <* checkMatchingToken ForToken
+    <*> pType
+    <* checkMatchingToken LBraceToken
+    <*> many parseConcMethodDef
+    <* checkMatchingToken RBraceToken
+
+-- ImplDef Parser
+-- conc_methoddef ::= `method` var `(` comma_param `)` `:` type `{` stmt* `}`
+parseConcMethodDef :: Parser ConcMethodDef
+parseConcMethodDef =
+  ConcMethodDef
+    <$ checkMatchingToken MethodToken
+    <*> pIdentifier
+    <* checkMatchingToken LParenToken
+    <*> pParam
+    <* checkMatchingToken RParenToken
+    <* checkMatchingToken ColonToken
+    <*> pType
+    <* checkMatchingToken LBraceToken
+    <*> many pStmt
+    <* checkMatchingToken RBraceToken
+
+-- FuncDef Parser
+-- funcdef ::= `func` var `(` comma_param `)` `:` type `{` stmt* `}`
+parseFuncDef :: Parser FuncDef
+parseFuncDef =
+  FuncDef
+    <$ checkMatchingToken FuncToken
+    <*> pIdentifier
+    <* checkMatchingToken LParenToken
+    <*> pParam
+    <* checkMatchingToken RParenToken
+    <* checkMatchingToken ColonToken
+    <*> pType
+    <* checkMatchingToken LBraceToken
+    <*> many pStmt
+    <* checkMatchingToken RBraceToken
+
+-- parse Program Items
+-- program_item ::= structdef | traitdef | impldef | funcdef
+parseProgramItem :: Parser ProgramItem
+parseProgramItem =
+  choice
+    [ PI_Struct <$> parseStructDef
+    , PI_Trait  <$> parseTraitDef
+    , PI_Impl   <$> parseImplDef
+    , PI_Func   <$> parseFuncDef
+    ]
+
+-- parse Program
+-- program ::= program_item* stmt* 
+parseProgram :: Parser Program
+parseProgram =
+  Program
+    <$> many parseProgramItem
+    <*> many pStmt
 
  
