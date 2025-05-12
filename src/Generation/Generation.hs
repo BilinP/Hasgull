@@ -1,10 +1,12 @@
 module Generation.Generation
-    ( generateJS,translateStmt, translateType, translateParam, translateExpr
+    ( generateJS,translateStmt, translateType, translateParam, translateExpr, createOutputFile
     ) where
+
+import Prelude
 
 import Parser.AST
 import Data.List(intercalate)
-import System.IO(writeFile)
+import System.IO(writeFile,readFile)
 
 
 -- | generateJS: Converts a Program AST to JavaScript.
@@ -24,9 +26,13 @@ generateJS program =
 -- If it's a letstmt or some form of initilizer, we push into list 
 -- Any call or AST part that isn't an immediate, we check that list, throw exception if not.
 
-createOutputFile :: String -> String -> IO ()
-createOutputFile fileName content = do
-    writeFile fileName content
+--Test function to see if we can write the output of a generateJS to a test javascript file
+
+createOutputFile :: Program -> IO String
+createOutputFile output = do
+    writeFile "test.js"  (generateJS output)
+    readFile "test.js"
+    
 
 -- Translate Type
 -- translate an Type AST node into a string of an equivalent javascript expression
@@ -70,18 +76,18 @@ translateParam (Param name t) = --Since we are converting to javascript, then wh
 translateStmt :: Stmt -> String
 translateStmt stmt = case stmt of
     BreakStmt -> "break;"
-    LetStmt param e -> "let" ++ " " ++ translateParam param ++ "=" ++ translateExpr e
-    AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2
-    BlockStmt stmts -> "{ " ++ intercalate " \n " (map translateStmt stmts) ++ "}" --default show in test means that it just prints the newline character
-    WhileStmt e stmts -> "while(" ++ translateExpr e ++ ")" ++ translateStmt stmts  
-    IfStmt e st maybeElse -> "if(" ++ translateExpr e ++ ")" ++ translateStmt st ++ case maybeElse of
-        Just elseStmt -> " else" ++ translateStmt elseStmt
+    LetStmt param e -> "let" ++ " " ++ translateParam param ++ " = " ++ translateExpr e ++ ";"
+    AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 ++ "; "
+    BlockStmt stmts -> "{ " ++ intercalate " \n " (map translateStmt stmts) ++ "} " --default show in test means that it just prints the newline character
+    WhileStmt e stmts -> "while(" ++ translateExpr e ++ ") " ++ translateStmt stmts  
+    IfStmt e st maybeElse -> "if( " ++ translateExpr e ++ ") " ++ translateStmt st ++ case maybeElse of
+        Just elseStmt -> " else " ++ translateStmt elseStmt
         Nothing -> ""
     ForStmt stmt1 e1 stmt2 stmt3 -> "for(" ++ translateStmt stmt1 ++ ";" ++ translateExpr e1 ++ " ; " ++ translateStmt stmt2 ++ ")" ++ translateStmt stmt3
     ReturnStmt maybeExpr -> "return " ++ case maybeExpr of
-        Just reExpr -> translateExpr reExpr ++ ";"
+        Just reExpr -> translateExpr reExpr ++ ";" ++ " "
         Nothing -> ";"
-    PrintLnStmt e -> "console.log( " ++ translateExpr e ++ ")"
+    PrintLnStmt e -> "console.log(" ++ translateExpr e ++ ")" ++ ";"
     _ -> "How did you get here?"
 
 

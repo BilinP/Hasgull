@@ -2,9 +2,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
+import System.IO (readFile)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
-import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS)
+import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
+import Parser.AST (Program(progItems))
 
 
 main :: IO ()
@@ -446,6 +448,17 @@ runGenTest code expected =
         Right prog -> generateJS prog @?= expected
         Left err   -> assertFailure (show err)
     Left err -> assertFailure (show err)
+  
+runFileOutput :: String -> String -> Assertion
+runFileOutput input expect =
+  case tokenize input of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> do 
+          content <- createOutputFile prog 
+          content @?= expect
+        Left err -> assertFailure (show err)
+    Left err -> assertFailure (show err)
 
 
 generatorTests :: TestTree
@@ -474,4 +487,8 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "if(x<5) x=x*2;" "if(x<5)x=x*2;}"
   , testCase "if else stmt translation" $
       runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
+  , testCase "println" $
+      runGenTest "println(x);" "console.log(x);"
+  , testCase "create js file" $
+      runFileOutput "let x: Int = 5; x = 5 + 5; println(x);" "let x = 5; x = 5 + 5; console.log(x);"
   ]
