@@ -5,6 +5,7 @@ module Generation.Generation
 
 import Parser.AST
 import Data.List(intercalate)
+import System.IO(writeFile)
 
 
 
@@ -14,8 +15,12 @@ import Data.List(intercalate)
 
 -- Thoughts
 -- Have lists constructed at block stmts or equivalents that get passed into translate calls?
--- If it's a letstmt or some form of intilizer, we push into list 
+-- If it's a letstmt or some form of initilizer, we push into list 
 -- Any call or AST part that isn't an immediate, we check that list, throw exception if not.
+
+createOutputFile :: String -> String -> IO ()
+createOutputFile fileName content = do
+    writeFile fileName content
 
 -- Translate Type
 -- translate an Type AST node into a string of an equivalent javascript expression
