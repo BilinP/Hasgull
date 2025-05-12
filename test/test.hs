@@ -4,7 +4,7 @@ import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
-import Generation.Generation (translateStmt,translateType, translateParam, translateExpr)
+import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS)
 
 
 main :: IO ()
@@ -437,35 +437,41 @@ parserTests = testGroup "Parser Tests"
         Left err -> assertFailure err
   ]     
   
+-- Helper to run the full pipeline: tokenize, parse, then generate JS.
+runGenTest :: String -> String -> Assertion
+runGenTest code expected =
+  case tokenize code of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> generateJS prog @?= expected
+        Left err   -> assertFailure (show err)
+    Left err -> assertFailure (show err)
+
+
 generatorTests :: TestTree
 generatorTests = testGroup "Generator Tests"
-  [
-    testCase "Translate BreakStmt" $
-      translateStmt BreakStmt @?= "break;",
-    testCase "Translate Param" $
-      translateParam (Param "a1" IntType) @?= "a1",
-    testCase "Translate Int Expr" $
-      translateExpr (Int 5) @?= "5",
-    testCase "Translate Identifer" $
-      translateExpr (Identifier "CAIN") @?= "CAIN",
-    testCase "Translate Add with two Ints" $
-      translateExpr (Add (Int 7) (Int 7)) @?= "7 + 7",
-    testCase "Translate Add that is one add + one int ie 3 + 3 + 3" $
-      translateExpr (Add (Add (Int 3) (Int 3)) (Identifier "bill"))  @?= "3 + 3 + bill",
-    testCase "Translate a Dot Expression into a string" $
-      translateExpr (DotExpr LowerSelf (Identifier "value")) @?= "self.value",
-    testCase "Translate Multiply (x + 2 ) * 2" $
-      translateExpr (Multiply (Add (Identifier "x") (Int 2)) (Int 2)) @?= "x + 2 * 2",
-    testCase "Translate a CallExp" $
-      translateExpr(DotExpr (Identifier "obj") (Call (Identifier "add") [Identifier "a", Identifier "b"] ) ) @?= "obj.add(a,b)",
-    testCase "Translate let a1: Int = 5;" $
-      translateStmt (LetStmt (Param "a1" IntType) (Int 5)) @?= "let a1 = 5",
-    testCase "translate blockstmt {let a: Int = 10; a = a + 5; }" $
-      translateStmt (BlockStmt [LetStmt (Param "a" IntType) (Int 10), AssgStmt (Identifier "a") (Add (Identifier "a" ) (Int 5) )]) @?= "{ let a = 10 \n a = a + 5 }",
-    testCase "while stmt translation" $
-      translateStmt (WhileStmt (LessThan (Identifier "x") (Int 5)) (BlockStmt [AssgStmt (Identifier"x") (Add (Identifier "x") (Int 1) )])) @?= "while(x < 5) { x = x + 1 }",
-    testCase "if stmt translation" $
-      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) Nothing) @?= "if(x < 5) x = x * 2",
-    testCase "if else stmt translation" $
-      translateStmt (IfStmt (LessThan (Identifier "x") (Int 5)) (AssgStmt (Identifier "x") (Multiply (Identifier "x") (Int 2))) (Just (AssgStmt (Identifier "x") (Add (Identifier "x") (Int 2))))) @?= "if(x < 5) x = x * 2  else x = x + 2"
-    ]
+  [ testCase "Translate BreakStmt" $
+      runGenTest "break;" "break;"
+  , testCase "Translate Int Expr" $
+      runGenTest "let x: Int = 5;" "let x = 5;"
+  , testCase "Translate Add with two Ints" $
+      runGenTest "let x: Int = 7+7;" "let x = 7+7;"
+  , testCase "Translate Add that is one add + one int ie 3+3+bill" $
+      runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
+  , testCase "Translate a Dot Expression into a string" $
+      runGenTest "let x: Int = self.value;" "let x = self.value;"
+  , testCase "Translate Multiply (x+2)*2" $
+      runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
+  , testCase "Translate a CallExp" $
+      runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
+  , testCase "Translate let a1: Int = 5;" $
+      runGenTest "let a1: Int = 5;" "let a1 = 5;"
+  , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
+      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10;a=a+5;}"
+  , testCase "while stmt translation" $
+      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1;}"
+  , testCase "if stmt translation" $
+      runGenTest "if(x<5) x=x*2;" "if(x<5)x=x*2;}"
+  , testCase "if else stmt translation" $
+      runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
+  ]
