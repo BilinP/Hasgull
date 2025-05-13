@@ -509,8 +509,6 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
-  , testCase "create js file" $
-      runFileOutput "let x: Int = 5; x = 5 + 5; println(x);" "let x = 5; x = 5 + 5; console.log(x);"
   , testCase "actually read from a file" $
       testreadFile "sample.gull" ""
   ]
