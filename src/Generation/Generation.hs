@@ -28,10 +28,11 @@ generateJS program =
 
 --Test function to see if we can write the output of a generateJS to a test javascript file
 
-createOutputFile :: Program -> IO String
-createOutputFile output = do
-    writeFile "test.js"  (generateJS output)
-    readFile "test.js"
+createOutputFile :: Program -> String -> IO String
+createOutputFile output outputFilename= do
+    let theOutputFile = outputFilename ++ ".js"
+    writeFile theOutputFile  (generateJS output)
+    return "Successfully Compilied!"
     
 
 -- Translate Type

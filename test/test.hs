@@ -3,6 +3,7 @@ import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import System.IO (readFile)
+import Data.List (isSuffixOf)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
@@ -455,7 +456,7 @@ runFileOutput input expect =
     Right tokens ->
       case pProgram tokens of
         Right prog -> do 
-          content <- createOutputFile prog 
+          content <- createOutputFile prog "test"
           content @?= expect
         Left err -> assertFailure (show err)
     Left err -> assertFailure (show err)
@@ -465,20 +466,23 @@ runFileOutput input expect =
 
 --Test function to read from file (say .gull because hasgull) and then compile to javascript
 -- successfull pass should create a file(test.js) of javascript code
-testreadFile :: String -> String -> Assertion
-testreadFile inputFile expecting = do --Get the file we want to read from
-  validFile <- readFile inputFile 
-  let sample = lines validFile  
-  let extracted = concatMap (++ "") sample 
-  case tokenize extracted of
-    Right tokens ->
-      case pProgram tokens of
-        Right prog -> do
-          content <- createOutputFile prog
-          content @?= expecting
+testreadFile :: String -> String -> String -> Assertion
+testreadFile inputFile outputName expecting = do --Get the file we want to read from
+  if ".gull" `isSuffixOf` inputFile
+    then do
+       validFile <- readFile inputFile 
+       let sample = lines validFile  
+       let extracted = concatMap (++ "") sample 
+       case tokenize extracted of
+        Right tokens ->
+         case pProgram tokens of
+           Right prog -> do
+             content <- createOutputFile prog outputName
+             content @?= expecting
+           Left err -> assertFailure (show err)
         Left err -> assertFailure (show err)
-    Left err -> assertFailure (show err)
-  
+    else "ILLEGAL FILE" @?= expecting
+ 
 
 
 generatorTests :: TestTree
@@ -502,13 +506,15 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
       runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10;a=a+5;}"
   , testCase "while stmt translation" $
-      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1;}"
+      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1; }"
   , testCase "if stmt translation" $
-      runGenTest "if(x<5) x=x*2;" "if(x<5)x=x*2;}"
+      runGenTest "if(x<5) x=x*2;" "if( x<5) x=x*2;"
   , testCase "if else stmt translation" $
       runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
   , testCase "actually read from a file" $
-      testreadFile "sample.gull" ""
+      testreadFile "sample.gull" "increment" ""
+  , testCase "test not allowing a non .gull file to compile" $
+      testreadFile "fail.py" "willwork" "ILLEGAL FILE"
   ]
