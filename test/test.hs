@@ -461,6 +461,26 @@ runFileOutput input expect =
     Left err -> assertFailure (show err)
 
 
+
+
+--Test function to read from file (say .gull because hasgull) and then compile to javascript
+-- successfull pass should create a file(test.js) of javascript code
+testreadFile :: String -> String -> Assertion
+testreadFile inputFile expecting = do --Get the file we want to read from
+  validFile <- readFile inputFile 
+  let sample = lines validFile  
+  let extracted = concatMap (++ "") sample 
+  case tokenize extracted of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> do
+          content <- createOutputFile prog
+          content @?= expecting
+        Left err -> assertFailure (show err)
+    Left err -> assertFailure (show err)
+  
+
+
 generatorTests :: TestTree
 generatorTests = testGroup "Generator Tests"
   [ testCase "Translate BreakStmt" $
@@ -491,4 +511,6 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "println(x);" "console.log(x);"
   , testCase "create js file" $
       runFileOutput "let x: Int = 5; x = 5 + 5; println(x);" "let x = 5; x = 5 + 5; console.log(x);"
+  , testCase "actually read from a file" $
+      testreadFile "sample.gull" ""
   ]
