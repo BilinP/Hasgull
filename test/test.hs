@@ -2,11 +2,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
+import System.IO (readFile)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
+import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
+import Parser.AST (Program(progItems))
+
 
 main :: IO ()
-main = defaultMain parserTests
+main = defaultMain generatorTests
 
 
 tests :: TestTree
@@ -433,5 +437,78 @@ parserTests = testGroup "Parser Tests"
       case tokenize ("obj.method2(a,b)(a)") of
         Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a",Identifier "b"]) [Identifier "a"]))
         Left err -> assertFailure err
-
   ]     
+  
+-- Helper to run the full pipeline: tokenize, parse, then generate JS.
+runGenTest :: String -> String -> Assertion
+runGenTest code expected =
+  case tokenize code of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> generateJS prog @?= expected
+        Left err   -> assertFailure (show err)
+    Left err -> assertFailure (show err)
+  
+runFileOutput :: String -> String -> Assertion
+runFileOutput input expect =
+  case tokenize input of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> do 
+          content <- createOutputFile prog 
+          content @?= expect
+        Left err -> assertFailure (show err)
+    Left err -> assertFailure (show err)
+
+
+
+
+--Test function to read from file (say .gull because hasgull) and then compile to javascript
+-- successfull pass should create a file(test.js) of javascript code
+testreadFile :: String -> String -> Assertion
+testreadFile inputFile expecting = do --Get the file we want to read from
+  validFile <- readFile inputFile 
+  let sample = lines validFile  
+  let extracted = concatMap (++ "") sample 
+  case tokenize extracted of
+    Right tokens ->
+      case pProgram tokens of
+        Right prog -> do
+          content <- createOutputFile prog
+          content @?= expecting
+        Left err -> assertFailure (show err)
+    Left err -> assertFailure (show err)
+  
+
+
+generatorTests :: TestTree
+generatorTests = testGroup "Generator Tests"
+  [ testCase "Translate BreakStmt" $
+      runGenTest "break;" "break;"
+  , testCase "Translate Int Expr" $
+      runGenTest "let x: Int = 5;" "let x = 5;"
+  , testCase "Translate Add with two Ints" $
+      runGenTest "let x: Int = 7+7;" "let x = 7+7;"
+  , testCase "Translate Add that is one add + one int ie 3+3+bill" $
+      runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
+  , testCase "Translate a Dot Expression into a string" $
+      runGenTest "let x: Int = self.value;" "let x = self.value;"
+  , testCase "Translate Multiply (x+2)*2" $
+      runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
+  , testCase "Translate a CallExp" $
+      runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
+  , testCase "Translate let a1: Int = 5;" $
+      runGenTest "let a1: Int = 5;" "let a1 = 5;"
+  , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
+      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10;a=a+5;}"
+  , testCase "while stmt translation" $
+      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1;}"
+  , testCase "if stmt translation" $
+      runGenTest "if(x<5) x=x*2;" "if(x<5)x=x*2;}"
+  , testCase "if else stmt translation" $
+      runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
+  , testCase "println" $
+      runGenTest "println(x);" "console.log(x);"
+  , testCase "actually read from a file" $
+      testreadFile "sample.gull" ""
+  ]
