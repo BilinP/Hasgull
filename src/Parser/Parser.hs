@@ -61,12 +61,23 @@ isIntegerToken :: Token -> Bool
 isIntegerToken (IntegerToken _) = True
 isIntegerToken _ = False
 
+pNewStruct :: Parser Expr
+pNewStruct = do
+  _ <- symbol NewToken
+  structer <- pStructname
+  _ <- symbol LBraceToken
+  structParams <- pCommaParam
+  _ <- symbol RBraceToken
+  return $ NewStruct structer structParams
+
+  
+
 -- checkMatching Token
 checkMatchingToken :: Token -> Parser Token
 checkMatchingToken t = label (show t) $ satisfy (== t)
 ---------------------------------------------------------------------------
 pAtom :: Parser Expr
-pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
+pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean, pNewStruct ]
 
 pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
@@ -281,6 +292,7 @@ pSingleTerm = choice
   , pInteger
   , pSelf
   , pVariable
+  , pNewStruct
   ]
 
 -- Parse an expression

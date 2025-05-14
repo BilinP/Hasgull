@@ -7,11 +7,11 @@ import Data.List (isSuffixOf)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
-import Parser.AST (Program(progItems))
+import Parser.AST (Program(progItems), Type (StructName))
 
 
 main :: IO ()
-main = defaultMain generatorTests
+main = defaultMain parserTests
 
 
 tests :: TestTree
@@ -127,6 +127,10 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse negation" $
       case tokenize "-5" of
         Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
+        Left err -> assertFailure err
+  , testCase "parse new struct delcaration" $
+      case tokenize "new car {x: Int}" of
+        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [Param "x" IntType])
         Left err -> assertFailure err
   , testCase "Parse addition" $
       case tokenize "-3 + 4" of
