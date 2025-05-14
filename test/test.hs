@@ -129,8 +129,8 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
         Left err -> assertFailure err
   , testCase "parse new struct delcaration" $
-      case tokenize "new car {x: Int}" of
-        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [Param "x" IntType])
+      case tokenize "new car {x: Int, y: Int}" of
+        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [Param "x" IntType, Param "y" IntType])
         Left err -> assertFailure err
   , testCase "Parse addition" $
       case tokenize "-3 + 4" of
