@@ -261,7 +261,7 @@ parserTests = testGroup "Parser Tests"
                , traitAbsMethodDef =
                    [ AbsMethodDef
                        { abMethName = "doIt"
-                       , abMethParameters = Param "x" IntType
+                       , abMethParameters = [Param "x" IntType]
                        , abMethReturnType = VoidType
                        }
                    ]
@@ -274,7 +274,7 @@ parserTests = testGroup "Parser Tests"
           pAbsMethodDef tokens @?= Right
             (AbsMethodDef
                { abMethName = "doIt"
-               , abMethParameters = Param "x" IntType
+               , abMethParameters = [Param "x" IntType]
                , abMethReturnType = VoidType
                })
         Left err -> assertFailure err
@@ -285,7 +285,7 @@ parserTests = testGroup "Parser Tests"
           pStructDef tokens @?= Right
             (StructDef
                { strucName = "Car"
-               , strucFields = Param "brand" IntType
+               , strucFields = [Param "brand" IntType]
                })
         Left err -> assertFailure err
 
@@ -299,7 +299,7 @@ parserTests = testGroup "Parser Tests"
                , iMethods =
                    [ ConcMethodDef
                        { cmName = "doIt"
-                       , cmParameters = Param "x" IntType
+                       , cmParameters = [Param "x" IntType]
                        , cmReturnType = VoidType
                        , cmBody = [BreakStmt]
                        }
@@ -313,7 +313,7 @@ parserTests = testGroup "Parser Tests"
           pConcMethodDef tokens @?= Right
             (ConcMethodDef
                { cmName = "setVal"
-               , cmParameters = Param "x" IntType
+               , cmParameters = [Param "x" IntType]
                , cmReturnType = VoidType
                , cmBody = [AssgStmt (Identifier "x") (Int 5)]
                })
@@ -325,7 +325,7 @@ parserTests = testGroup "Parser Tests"
           pFuncDef tokens @?= Right
             (FuncDef
                { funcName = "main"
-               , funcParameters = Param "a" IntType
+               , funcParameters = [Param "a" IntType]
                , funcReturnType = VoidType
                , funcBody = [AssgStmt (Identifier "a") (Int 5)]
                })
@@ -336,7 +336,7 @@ parserTests = testGroup "Parser Tests"
           pProgramItem tokens @?= Right
             (PI_Struct (StructDef
                { strucName   = "Person"
-               , strucFields = Param "name" IntType
+               , strucFields = [Param "name" IntType]
                }))
         Left err ->
           assertFailure err
@@ -348,7 +348,7 @@ parserTests = testGroup "Parser Tests"
                { progItems =
                    [ PI_Struct (StructDef
                        { strucName   = "Person"
-                       , strucFields = Param "age" IntType
+                       , strucFields = [Param "age" IntType]
                        })
                    ]
                , progStmts =
@@ -370,14 +370,14 @@ parserTests = testGroup "Parser Tests"
                   , traitAbsMethodDef =
                       [ AbsMethodDef
                           { abMethName       = "doIt"
-                          , abMethParameters = Param "x" IntType
+                          , abMethParameters = [Param "x" IntType]
                           , abMethReturnType = VoidType
                           }
                       ]
                   })
               , PI_Struct (StructDef
                   { strucName   = "Car"
-                  , strucFields = Param "brand" IntType
+                  , strucFields = [Param "brand" IntType]
                   })
               ]
           , progStmts =
@@ -403,14 +403,14 @@ parserTests = testGroup "Parser Tests"
                   , traitAbsMethodDef =
                       [ AbsMethodDef
                           { abMethName       = "doIt"
-                          , abMethParameters = Param "x" IntType
+                          , abMethParameters = [Param "x" IntType]
                           , abMethReturnType = VoidType
                           }
                       ]
                   })
               , PI_Struct (StructDef
                   { strucName   = "Car"
-                  , strucFields = Param "brand" IntType
+                  , strucFields = [Param "brand" IntType]
                   })
               , PI_Impl (ImplDef
                   { implTraitName = "MyTrait"
@@ -418,7 +418,7 @@ parserTests = testGroup "Parser Tests"
                   , iMethods      =
                       [ ConcMethodDef
                           { cmName       = "doIt"
-                          , cmParameters = Param "x" IntType
+                          , cmParameters = [Param "x" IntType]
                           , cmReturnType = VoidType
                           , cmBody       = [BreakStmt]
                           }
@@ -426,7 +426,7 @@ parserTests = testGroup "Parser Tests"
                   })
               , PI_Func (FuncDef
                   { funcName       = "main"
-                  , funcParameters = Param "a" IntType
+                  , funcParameters = [Param "a" IntType]
                   , funcReturnType = VoidType
                   , funcBody       = [ReturnStmt Nothing]
                   })

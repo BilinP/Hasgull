@@ -415,7 +415,7 @@ parseAbsMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType
@@ -430,7 +430,7 @@ parseStructDef =
     <$ checkMatchingToken StructToken
     <*> pIdentifier
     <* checkMatchingToken LBraceToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RBraceToken
 
 -- ImplDef Parser
@@ -454,7 +454,7 @@ parseConcMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType
@@ -470,7 +470,7 @@ parseFuncDef =
     <$ checkMatchingToken FuncToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType

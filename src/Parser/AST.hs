@@ -83,13 +83,13 @@ data TraitDef = TraitDef
 
 data AbsMethodDef = AbsMethodDef
   { abMethName :: String
-  , abMethParameters :: Param
+  , abMethParameters :: [Param]
   , abMethReturnType :: Type
   } deriving (Show, Eq)
 
 data StructDef = StructDef
   { strucName   :: String              
-  , strucFields :: Param             
+  , strucFields :: [Param]             
   } deriving (Show, Eq)
 
 data ImplDef = ImplDef
@@ -100,14 +100,14 @@ data ImplDef = ImplDef
 
 data ConcMethodDef = ConcMethodDef
   { cmName       :: String          
-  , cmParameters :: Param
+  , cmParameters :: [Param]
   , cmReturnType :: Type
   , cmBody       :: [Stmt]     
   } deriving (Show, Eq)
 
 data FuncDef = FuncDef
     { funcName       :: String
-    , funcParameters :: Param
+    , funcParameters :: [Param]
     , funcReturnType    :: Type
     , funcBody          :: [Stmt]
     } deriving (Show, Eq)
