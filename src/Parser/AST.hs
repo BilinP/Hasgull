@@ -19,7 +19,7 @@ module Parser.AST
 data Expr
   = Identifier String
   | Int Int
-  | NewStruct Type [Param]
+  | NewStruct Type [StructActualParam]
   | Negative Expr
   | Add Expr Expr
   | DotExpr Expr Expr

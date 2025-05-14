@@ -66,7 +66,7 @@ pNewStruct = do
   _ <- symbol NewToken
   structer <- pStructname
   _ <- symbol LBraceToken
-  structParams <- pCommaParam
+  structParams <- pStructActualParams
   _ <- symbol RBraceToken
   return $ NewStruct structer structParams
 
@@ -176,7 +176,10 @@ pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
                      
 
 pExprStmt :: Parser Stmt
-pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
+pExprStmt = do
+  expd <- pExpr
+  _ <- symbol SemiColonToken 
+  return $ ExprStmt expd
 
 
 
@@ -213,7 +216,6 @@ pStmt = choice
            pIfStmt,
            pWhileStmt,
            pForStmt,
-           pExprStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,

@@ -67,6 +67,12 @@ translateExpr expr = case expr of
     NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
     GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
     LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
+    NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
+
+
+translateStructParam :: StructActualParam -> String
+translateStructParam sparam = case sparam of
+    StructActualParam str e -> translateExpr e
 
 -- Translate a Param AST node into a string of an equivalent javascript expression
 translateParam :: Param -> String

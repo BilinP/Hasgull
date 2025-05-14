@@ -7,11 +7,11 @@ import Data.List (isSuffixOf)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
-import Parser.AST (Program(progItems), Type (StructName))
+import Parser.AST (Program(progItems), Type (StructName), Stmt (ExprStmt), StructActualParam (StructActualParam))
 
 
 main :: IO ()
-main = defaultMain parserTests
+main = defaultMain generatorTests
 
 
 tests :: TestTree
@@ -129,8 +129,8 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
         Left err -> assertFailure err
   , testCase "parse new struct delcaration" $
-      case tokenize "new car {x: Int, y: Int}" of
-        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [Param "x" IntType, Param "y" IntType])
+      case tokenize "new car {x: 7}" of
+        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [StructActualParam "x" (Int 7) ])
         Left err -> assertFailure err
   , testCase "Parse addition" $
       case tokenize "-3 + 4" of
@@ -508,15 +508,17 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate let a1: Int = 5;" $
       runGenTest "let a1: Int = 5;" "let a1 = 5;"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
-      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10;a=a+5;}"
+      runGenTest "{let a: Int = 10; a = a+5;}" "{ let a = 10; \n a=a+5; } "
   , testCase "while stmt translation" $
-      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1; }"
+      runGenTest "while(x<5){x=x+1;}" "while(x<5) { x=x+1; } "
   , testCase "if stmt translation" $
-      runGenTest "if(x<5) x=x*2;" "if( x<5) x=x*2;"
+      runGenTest "if(x<5) x=x*2;" "if( x<5) x=x*2; "
   , testCase "if else stmt translation" $
-      runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
+      runGenTest "if(x<5) x=x*2; else x=x+2;" "if( x<5) x=x*2;  else x=x+2; "
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
+  , testCase "new struct instance" $
+      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
   , testCase "actually read from a file" $
       testreadFile "sample.gull" "increment" ""
   , testCase "test not allowing a non .gull file to compile" $
