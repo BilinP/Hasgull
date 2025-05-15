@@ -526,13 +526,13 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate let a1: Int = 5;" $
       runGenTest "let a1: Int = 5;" "let a1 = 5;"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
-      runGenTest "{let a: Int = 10; a = a+5;}" "{ let a = 10; \n a=a+5; } "
+      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10; a=a+5; }"
   , testCase "while stmt translation" $
-      runGenTest "while(x<5){x=x+1;}" "while(x<5) { x=x+1; } "
+      runGenTest "while(x<5){x=x+1;}" "while(x<5) {x=x+1; }"
   , testCase "if stmt translation" $
-      runGenTest "if(x<5) x=x*2;" "if( x<5) x=x*2; "
+      runGenTest "if(x<5)x=x*2;" "if( x<5) x=x*2; "
   , testCase "if else stmt translation" $
-      runGenTest "if(x<5) x=x*2; else x=x+2;" "if( x<5) x=x*2;  else x=x+2; "
+      runGenTest "if(x<5) {x=x*2;x=x+2;} else x=x+2;" "if( x<5) {x=x*2;  x=x+2; } else x=x+2; "
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
   , testCase "new struct instance" $
