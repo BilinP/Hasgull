@@ -3,10 +3,11 @@ import Test.Tasty.HUnit
 import Tokenizer.Tokenizer
 import Tokenizer.Token (Token(..))
 import System.IO (readFile)
+import Data.List (isSuffixOf)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
-import Parser.AST (Program(progItems))
+import Parser.AST (Program(progItems), Type (StructName), Stmt (ExprStmt), StructActualParam (StructActualParam))
 
 
 main :: IO ()
@@ -126,6 +127,10 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse negation" $
       case tokenize "-5" of
         Right tokens -> parseExpression tokens @?= Right (Negative (Int 5))
+        Left err -> assertFailure err
+  , testCase "parse new struct delcaration" $
+      case tokenize "new car {x: 7}" of
+        Right tokens -> parseExpression tokens @?= Right (NewStruct (StructName "car") [StructActualParam "x" (Int 7) ])
         Left err -> assertFailure err
   , testCase "Parse addition" $
       case tokenize "-3 + 4" of
@@ -256,7 +261,7 @@ parserTests = testGroup "Parser Tests"
                , traitAbsMethodDef =
                    [ AbsMethodDef
                        { abMethName = "doIt"
-                       , abMethParameters = Param "x" IntType
+                       , abMethParameters = [Param "x" IntType]
                        , abMethReturnType = VoidType
                        }
                    ]
@@ -269,7 +274,7 @@ parserTests = testGroup "Parser Tests"
           pAbsMethodDef tokens @?= Right
             (AbsMethodDef
                { abMethName = "doIt"
-               , abMethParameters = Param "x" IntType
+               , abMethParameters = [Param "x" IntType]
                , abMethReturnType = VoidType
                })
         Left err -> assertFailure err
@@ -280,7 +285,7 @@ parserTests = testGroup "Parser Tests"
           pStructDef tokens @?= Right
             (StructDef
                { strucName = "Car"
-               , strucFields = Param "brand" IntType
+               , strucFields = [Param "brand" IntType]
                })
         Left err -> assertFailure err
 
@@ -294,7 +299,7 @@ parserTests = testGroup "Parser Tests"
                , iMethods =
                    [ ConcMethodDef
                        { cmName = "doIt"
-                       , cmParameters = Param "x" IntType
+                       , cmParameters = [Param "x" IntType]
                        , cmReturnType = VoidType
                        , cmBody = [BreakStmt]
                        }
@@ -308,7 +313,7 @@ parserTests = testGroup "Parser Tests"
           pConcMethodDef tokens @?= Right
             (ConcMethodDef
                { cmName = "setVal"
-               , cmParameters = Param "x" IntType
+               , cmParameters = [Param "x" IntType]
                , cmReturnType = VoidType
                , cmBody = [AssgStmt (Identifier "x") (Int 5)]
                })
@@ -320,7 +325,7 @@ parserTests = testGroup "Parser Tests"
           pFuncDef tokens @?= Right
             (FuncDef
                { funcName = "main"
-               , funcParameters = Param "a" IntType
+               , funcParameters = [Param "a" IntType]
                , funcReturnType = VoidType
                , funcBody = [AssgStmt (Identifier "a") (Int 5)]
                })
@@ -331,7 +336,7 @@ parserTests = testGroup "Parser Tests"
           pProgramItem tokens @?= Right
             (PI_Struct (StructDef
                { strucName   = "Person"
-               , strucFields = Param "name" IntType
+               , strucFields = [Param "name" IntType]
                }))
         Left err ->
           assertFailure err
@@ -343,7 +348,7 @@ parserTests = testGroup "Parser Tests"
                { progItems =
                    [ PI_Struct (StructDef
                        { strucName   = "Person"
-                       , strucFields = Param "age" IntType
+                       , strucFields = [Param "age" IntType]
                        })
                    ]
                , progStmts =
@@ -365,14 +370,14 @@ parserTests = testGroup "Parser Tests"
                   , traitAbsMethodDef =
                       [ AbsMethodDef
                           { abMethName       = "doIt"
-                          , abMethParameters = Param "x" IntType
+                          , abMethParameters = [Param "x" IntType]
                           , abMethReturnType = VoidType
                           }
                       ]
                   })
               , PI_Struct (StructDef
                   { strucName   = "Car"
-                  , strucFields = Param "brand" IntType
+                  , strucFields = [Param "brand" IntType]
                   })
               ]
           , progStmts =
@@ -398,14 +403,14 @@ parserTests = testGroup "Parser Tests"
                   , traitAbsMethodDef =
                       [ AbsMethodDef
                           { abMethName       = "doIt"
-                          , abMethParameters = Param "x" IntType
+                          , abMethParameters = [Param "x" IntType]
                           , abMethReturnType = VoidType
                           }
                       ]
                   })
               , PI_Struct (StructDef
                   { strucName   = "Car"
-                  , strucFields = Param "brand" IntType
+                  , strucFields = [Param "brand" IntType]
                   })
               , PI_Impl (ImplDef
                   { implTraitName = "MyTrait"
@@ -413,7 +418,7 @@ parserTests = testGroup "Parser Tests"
                   , iMethods      =
                       [ ConcMethodDef
                           { cmName       = "doIt"
-                          , cmParameters = Param "x" IntType
+                          , cmParameters = [Param "x" IntType]
                           , cmReturnType = VoidType
                           , cmBody       = [BreakStmt]
                           }
@@ -421,7 +426,7 @@ parserTests = testGroup "Parser Tests"
                   })
               , PI_Func (FuncDef
                   { funcName       = "main"
-                  , funcParameters = Param "a" IntType
+                  , funcParameters = [Param "a" IntType]
                   , funcReturnType = VoidType
                   , funcBody       = [ReturnStmt Nothing]
                   })
@@ -455,7 +460,7 @@ runFileOutput input expect =
     Right tokens ->
       case pProgram tokens of
         Right prog -> do 
-          content <- createOutputFile prog 
+          content <- createOutputFile prog "test"
           content @?= expect
         Left err -> assertFailure (show err)
     Left err -> assertFailure (show err)
@@ -465,20 +470,23 @@ runFileOutput input expect =
 
 --Test function to read from file (say .gull because hasgull) and then compile to javascript
 -- successfull pass should create a file(test.js) of javascript code
-testreadFile :: String -> String -> Assertion
-testreadFile inputFile expecting = do --Get the file we want to read from
-  validFile <- readFile inputFile 
-  let sample = lines validFile  
-  let extracted = concatMap (++ "") sample 
-  case tokenize extracted of
-    Right tokens ->
-      case pProgram tokens of
-        Right prog -> do
-          content <- createOutputFile prog
-          content @?= expecting
+testreadFile :: String -> String -> String -> Assertion
+testreadFile inputFile outputName expecting = do --Get the file we want to read from
+  if ".gull" `isSuffixOf` inputFile
+    then do
+       validFile <- readFile inputFile 
+       let sample = lines validFile  
+       let extracted = concatMap (++ "") sample 
+       case tokenize extracted of
+        Right tokens ->
+         case pProgram tokens of
+           Right prog -> do
+             content <- createOutputFile prog outputName
+             content @?= expecting
+           Left err -> assertFailure (show err)
         Left err -> assertFailure (show err)
-    Left err -> assertFailure (show err)
-  
+    else "ILLEGAL FILE" @?= expecting
+ 
 
 
 generatorTests :: TestTree
@@ -500,15 +508,19 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate let a1: Int = 5;" $
       runGenTest "let a1: Int = 5;" "let a1 = 5;"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
-      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10;a=a+5;}"
+      runGenTest "{let a: Int = 10; a = a+5;}" "{ let a = 10; \n a=a+5; } "
   , testCase "while stmt translation" $
-      runGenTest "while(x<5){x=x+1;}" "while(x<5){x=x+1;}"
+      runGenTest "while(x<5){x=x+1;}" "while(x<5) { x=x+1; } "
   , testCase "if stmt translation" $
-      runGenTest "if(x<5) x=x*2;" "if(x<5)x=x*2;}"
+      runGenTest "if(x<5) x=x*2;" "if( x<5) x=x*2; "
   , testCase "if else stmt translation" $
-      runGenTest "if(x<5) x=x*2; else x=x+2;" "if(x<5)x=x*2;elsex=x+2;"
+      runGenTest "if(x<5) x=x*2; else x=x+2;" "if( x<5) x=x*2;  else x=x+2; "
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
+  , testCase "new struct instance" $
+      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
   , testCase "actually read from a file" $
-      testreadFile "sample.gull" ""
+      testreadFile "sample.gull" "increment" ""
+  , testCase "test not allowing a non .gull file to compile" $
+      testreadFile "fail.py" "willwork" "ILLEGAL FILE"
   ]

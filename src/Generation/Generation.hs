@@ -29,10 +29,12 @@ generateJS program =
 
 -- Test function to see if we can write the output of a generateJS to a test javascript file
 
-createOutputFile :: Program -> IO String
-createOutputFile output = do
-  writeFile "test.js" (generateJS output)
-  readFile "test.js"
+createOutputFile :: Program -> String -> IO String
+createOutputFile output outputFilename= do
+    let theOutputFile = outputFilename ++ ".js"
+    writeFile theOutputFile  (generateJS output)
+    return "Successfully Compilied!"
+    
 
 -- Translate Type
 -- translate an Type AST node into a string of an equivalent javascript expression
@@ -51,20 +53,26 @@ translateType t = case t of
 -- Translate an expression AST node into a string of an equivalent javascript expression
 translateExpr :: Expr -> String
 translateExpr expr = case expr of
-  Identifier name -> name
-  Int n -> show n
-  Negative e -> "-" ++ translateExpr e
-  Add e1 e2 -> translateExpr e1 ++ "+" ++ translateExpr e2
-  DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
-  Call e args -> translateExpr e ++ "(" ++ intercalate "," (map translateExpr args) ++ ")"
-  Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
-  LowerSelf -> "self"
-  Multiply e1 e2 -> translateExpr e1 ++ "*" ++ translateExpr e2
-  Division e1 e2 -> translateExpr e1 ++ "/" ++ translateExpr e2
-  Equals e1 e2 -> translateExpr e1 ++ "===" ++ translateExpr e2
-  NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
-  GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
-  LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
+    Identifier name -> name
+    Int n -> show n
+    Negative e -> "-" ++ translateExpr e
+    Add e1 e2 -> translateExpr e1 ++ "+" ++ translateExpr e2
+    DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
+    Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
+    Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
+    LowerSelf -> "self"
+    Multiply e1 e2 -> translateExpr e1 ++ "*" ++ translateExpr e2
+    Division e1 e2 -> translateExpr e1 ++ "/" ++ translateExpr e2
+    Equals e1 e2 -> translateExpr e1 ++ "===" ++ translateExpr e2
+    NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
+    GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
+    LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
+    NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
+
+
+translateStructParam :: StructActualParam -> String
+translateStructParam sparam = case sparam of
+    StructActualParam str e -> translateExpr e
 
 -- Translate a Param AST node into a string of an equivalent javascript expression
 translateParam :: Param -> String

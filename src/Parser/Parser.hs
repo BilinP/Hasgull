@@ -61,12 +61,23 @@ isIntegerToken :: Token -> Bool
 isIntegerToken (IntegerToken _) = True
 isIntegerToken _ = False
 
+pNewStruct :: Parser Expr
+pNewStruct = do
+  _ <- symbol NewToken
+  structer <- pStructname
+  _ <- symbol LBraceToken
+  structParams <- pStructActualParams
+  _ <- symbol RBraceToken
+  return $ NewStruct structer structParams
+
+  
+
 -- checkMatching Token
 checkMatchingToken :: Token -> Parser Token
 checkMatchingToken t = label (show t) $ satisfy (== t)
 ---------------------------------------------------------------------------
 pAtom :: Parser Expr
-pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean ]
+pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean, pNewStruct ]
 
 pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
@@ -165,7 +176,10 @@ pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
                      
 
 pExprStmt :: Parser Stmt
-pExprStmt = ExprStmt <$> (pExpr <* symbol SemiColonToken)     
+pExprStmt = do
+  expd <- pExpr
+  _ <- symbol SemiColonToken 
+  return $ ExprStmt expd
 
 
 
@@ -202,7 +216,6 @@ pStmt = choice
            pIfStmt,
            pWhileStmt,
            pForStmt,
-           pExprStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,
@@ -281,6 +294,7 @@ pSingleTerm = choice
   , pInteger
   , pSelf
   , pVariable
+  , pNewStruct
   ]
 
 -- Parse an expression
@@ -403,7 +417,7 @@ parseAbsMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType
@@ -418,7 +432,7 @@ parseStructDef =
     <$ checkMatchingToken StructToken
     <*> pIdentifier
     <* checkMatchingToken LBraceToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RBraceToken
 
 -- ImplDef Parser
@@ -442,7 +456,7 @@ parseConcMethodDef =
     <$ checkMatchingToken MethodToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType
@@ -458,7 +472,7 @@ parseFuncDef =
     <$ checkMatchingToken FuncToken
     <*> pIdentifier
     <* checkMatchingToken LParenToken
-    <*> pParam
+    <*> pCommaParam
     <* checkMatchingToken RParenToken
     <* checkMatchingToken ColonToken
     <*> pType
