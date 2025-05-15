@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Generation.EnvTable
       Generation.Generation
       Lib
       Parser.AST
@@ -43,6 +44,7 @@ library
   build-depends:
       array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
@@ -63,6 +65,7 @@ executable Hasgull-exe
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
@@ -84,6 +87,7 @@ test-suite Hasgull-test
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
