@@ -102,6 +102,11 @@ translateParam :: Param -> String
 translateParam (Param name t) = --Since we are converting to javascript, then why would we include the type? The paraser should already have done the check on typing
     name
 
+wrapBlock :: Stmt -> String
+wrapBlock stmt = case stmt of
+    BlockStmt stmts -> translateBlock stmts
+    _               -> translateStmt stmt
+
 
 -- Translate a Stmt AST node into a string of an equivalent javascript expression
 translateStmt :: Stmt -> String
@@ -109,12 +114,14 @@ translateStmt stmt = case stmt of
     BreakStmt -> "break;"
     LetStmt param e -> "let" ++ " " ++ translateParam param ++ " = " ++ translateExpr e ++ ";"
     AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 ++ "; "
-    BlockStmt stmts -> "{ " ++ intercalate " \n " (map translateStmt stmts) ++ "} " --default show in test means that it just prints the newline character
-    WhileStmt e stmts -> "while(" ++ translateExpr e ++ ") " ++ translateStmt stmts  
-    IfStmt e st maybeElse -> "if( " ++ translateExpr e ++ ") " ++ translateStmt st ++ case maybeElse of
-        Just elseStmt -> " else " ++ translateStmt elseStmt
-        Nothing -> ""
-    ForStmt stmt1 e1 stmt2 stmt3 -> "for(" ++ translateStmt stmt1 ++ ";" ++ translateExpr e1 ++ " ; " ++ translateStmt stmt2 ++ ")" ++ translateStmt stmt3
+    BlockStmt stmts -> translateBlock stmts 
+    WhileStmt e stmts -> "while(" ++ translateExpr e ++ ") " ++  wrapBlock stmts  
+    IfStmt e st maybeElse -> "if( " ++ translateExpr e ++ ") " ++ wrapBlock st ++ 
+        case maybeElse of
+            Just elseStmt -> " else " ++ wrapBlock elseStmt
+            Nothing -> ""
+    ForStmt initS evalute update body -> 
+        "for(" ++ translateStmt initS ++ ";" ++ translateExpr evalute ++ " ; " ++ translateStmt update ++ ")" ++ wrapBlock body
     ReturnStmt maybeExpr -> "return " ++ case maybeExpr of
         Just reExpr -> translateExpr reExpr ++ ";" ++ " "
         Nothing -> ";"
