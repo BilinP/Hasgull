@@ -11,15 +11,21 @@ module Generation.Generation (
 
 import Prelude
 
-import Data.List (intercalate)
+import Data.List (intercalate, (\\))
+import qualified Data.Map as Map
+import Generation.EnvTable (TraitTable, buildTraitTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
 
 -- | generateJS: Converts a Program AST to JavaScript.
 generateJS :: Program -> String
 generateJS (Program items stmts) =
-  concatMap translateItem items
-    ++ concatMap translateStmt stmts
+  let
+    traitTbl = buildTraitTable items
+    itemJS = concatMap (translateItem traitTbl) items
+    stmtJS = concatMap translateStmt stmts
+   in
+    itemJS ++ stmtJS
 
 -- Code Generation stuff
 -- Since our "target" langauge is javascript, I'm honestly just testing first if we can take an AST and
@@ -133,9 +139,6 @@ translateStruct (StructDef name fields) =
       ++ consEnd
       ++ footer
 
-translateImpl :: ImplDef -> String
-translateImpl (ImplDef)
-
 -- Translates a StructDef AST node into a string of an equivalent javascript
 translateFunc :: FuncDef -> String
 translateFunc (FuncDef name params _ body) =
@@ -154,9 +157,47 @@ translateFunc (FuncDef name params _ body) =
    in
     header ++ stmts ++ footer
 
-translateItem :: ProgramItem -> String
-translateItem = \case
+translateImpl :: TraitTable -> ImplDef -> String
+translateImpl tbl (ImplDef traitName forType methods) =
+  case Map.lookup traitName tbl of
+    Nothing ->
+      error $ "Unknown trait: " ++ traitName
+    Just absMeths ->
+      let
+        -- method names required by the trait
+        required :: [String]
+        required = [name | AbsMethodDef name _params _retTy <- absMeths]
+
+        -- method names you actually implemented
+        provided :: [String]
+        provided = [name | ConcMethodDef name _params _retTy _body <- methods]
+
+        -- any that are still missing
+        missing :: [String]
+        missing = required \\ provided
+       in
+        if not (null missing)
+          then
+            error $
+              "Impl for trait “"
+                ++ traitName
+                ++ "” on "
+                ++ show forType
+                ++ " is missing methods: "
+                ++ show missing
+          else concatMap (emitMethod forType) methods
+ where
+  emitMethod (StructName t) (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = t ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer
+  emitMethod _ _ = ""
+
+translateItem :: TraitTable -> ProgramItem -> String
+translateItem traitTbl = \case
   PI_Struct s -> translateStruct s
   PI_Trait _ -> "" -- will fill in later
-  PI_Impl impl -> translateImpl impl
+  PI_Impl impl -> translateImpl traitTbl impl
   PI_Func func -> translateFunc func

@@ -10,39 +10,35 @@ module Parser.Parser (
   pConcMethodDef,
   pFuncDef,
   pProgramItem,
-  pProgram
+  pProgram,
 ) where
 
-import Tokenizer.Token (Token(..))
-import Control.Monad.Combinators.Expr
 import Control.Applicative
-import Text.Megaparsec hiding (Token, many) -- Hide Token to avoid ambiguity
-import Text.Megaparsec.Char()
+import Control.Monad.Combinators.Expr
+
+-- Hide Token to avoid ambiguity
+
 import Data.Void
 import Parser.AST
-
-
+import Text.Megaparsec hiding (Token, many)
+import Text.Megaparsec.Char ()
+import Tokenizer.Token (Token (..))
 
 -- Define the parser type
 type Parser = Parsec Void [Token]
- 
 
 pCommaExp :: Parser [Expr]
 pCommaExp = option [] $ do
-    first <- pExpr
-    rest  <- many (symbol CommaToken *> pExpr)
-    return (first : rest)
+  first <- pExpr
+  rest <- many (symbol CommaToken *> pExpr)
+  return (first : rest)
 
---Call expression parser
+-- Call expression parser
 pCallExp :: Parser Expr
 pCallExp = do
   func <- pSingleTerm
   args <- many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
-  pure (foldl Call func args) --Pure is a wrapper that succeeds without consuming input, at least that's what the documentation says
-
-
-
-
+  pure (foldl Call func args) -- Pure is a wrapper that succeeds without consuming input, at least that's what the documentation says
 
 -- Parse a variable
 pVariable :: Parser Expr
@@ -51,7 +47,6 @@ pVariable = Identifier <$> (satisfy isIdentifierToken >>= \(IdentifierToken name
 isIdentifierToken :: Token -> Bool
 isIdentifierToken (IdentifierToken _) = True
 isIdentifierToken _ = False
-
 
 -- Parse an integer
 pInteger :: Parser Expr
@@ -70,14 +65,13 @@ pNewStruct = do
   _ <- symbol RBraceToken
   return $ NewStruct structer structParams
 
-  
-
 -- checkMatching Token
 checkMatchingToken :: Token -> Parser Token
 checkMatchingToken t = label (show t) $ satisfy (== t)
+
 ---------------------------------------------------------------------------
 pAtom :: Parser Expr
-pAtom = choice [ pParensAtom, pVariable, pInteger, pBoolean, pNewStruct ]
+pAtom = choice [pParensAtom, pVariable, pInteger, pBoolean, pNewStruct]
 
 pParensAtom :: Parser Expr
 pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
@@ -86,9 +80,9 @@ pReturnStmt :: Parser Stmt
 pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
 pPrintLnStmt :: Parser Stmt
-pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom) ) <*  symbol SemiColonToken
----------------------------------------------------------------------------
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom)) <* symbol SemiColonToken
 
+---------------------------------------------------------------------------
 
 --- Parse type literals
 
@@ -96,30 +90,31 @@ pType :: Parser Type
 pType = try pFunctionType <|> pAtomType -- Try if it's a higher order type, backtrack and try the other parse if not
 
 pAtomType :: Parser Type
-pAtomType = choice 
-   [ pIntType
-   , pVoidType
-   , pBooleanType
-   , pSelfType
-   , pStructname
-   , pParenType
-   ]
+pAtomType =
+  choice
+    [ pIntType
+    , pVoidType
+    , pBooleanType
+    , pSelfType
+    , pStructname
+    , pParenType
+    ]
 
 pFunctionType :: Parser Type
 pFunctionType = do
-  arg <- between (symbol LParenToken) (symbol RParenToken) pArgType --Argument of the higher order function
-  symbol ArrowToken 
+  arg <- between (symbol LParenToken) (symbol RParenToken) pArgType -- Argument of the higher order function
+  symbol ArrowToken
   result <- pType
   return $ HigherOrderType arg result -- Bind the HigherOrder Type with the argument and the resulting type
 
 pArgType :: Parser [Type]
 pArgType = option [] $ do
-  firstArg <- pAtomType --Get the single,guranteed type
+  firstArg <- pAtomType -- Get the single,guranteed type
   restArgs <- many (symbol CommaToken *> pAtomType)
-  return ( firstArg : restArgs)
+  return (firstArg : restArgs)
 
 pIntType :: Parser Type
-pIntType = IntType <$ symbol IntToken 
+pIntType = IntType <$ symbol IntToken
 
 pVoidType :: Parser Type
 pVoidType = VoidType <$ symbol VoidToken
@@ -136,7 +131,7 @@ pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken na
 pParenType :: Parser Type
 pParenType = between (symbol LParenToken) (symbol RParenToken) pType
 
-parseParam :: [Token] -> Either (ParseErrorBundle [Token] Void ) Param
+parseParam :: [Token] -> Either (ParseErrorBundle [Token] Void) Param
 parseParam = runParser pParam ""
 
 parseStmt :: [Token] -> Either (ParseErrorBundle [Token] Void) Stmt
@@ -154,34 +149,36 @@ pCommaParam = option [] $ do
   return (firstParam : restParams)
 
 pAtomParam :: Parser Param
-pAtomParam = Param
-        <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
-        <* symbol ColonToken
-        <*> pType
-       
-
+pAtomParam =
+  Param
+    <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+    <* symbol ColonToken
+    <*> pType
 
 --- Parse Statements
 pLetStmt :: Parser Stmt
-pLetStmt = LetStmt <$> (symbol LetToken *> pParam)
-                   <*> (symbol EqualToken *> pExpr <* symbol SemiColonToken)
+pLetStmt =
+  LetStmt
+    <$> (symbol LetToken *> pParam)
+    <*> (symbol EqualToken *> pExpr <* symbol SemiColonToken)
 
 pAssgStmt :: Parser Stmt
-pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
-                     <*> (pExpr <* symbol SemiColonToken)
+pAssgStmt =
+  AssgStmt
+    <$> (pExpr <* symbol EqualToken)
+    <*> (pExpr <* symbol SemiColonToken)
 
 pAssgStmtSemiLess :: Parser Stmt
-pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
-                     <*> pExpr 
-                     
+pAssgStmtSemiLess =
+  AssgStmt
+    <$> (pExpr <* symbol EqualToken)
+    <*> pExpr
 
 pExprStmt :: Parser Stmt
 pExprStmt = do
   expd <- pExpr
-  _ <- symbol SemiColonToken 
+  _ <- symbol SemiColonToken
   return $ ExprStmt expd
-
-
 
 pBreakStmt :: Parser Stmt
 pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
@@ -190,10 +187,10 @@ pBlockStmt :: Parser Stmt
 pBlockStmt = BlockStmt <$> (symbol LBraceToken *> (many pStmt) <* symbol RBraceToken)
 
 pWhileStmt :: Parser Stmt
-pWhileStmt = WhileStmt <$> (symbol WhileToken *> pCondition)
-               <*> pBlockStmt
-
-
+pWhileStmt =
+  WhileStmt
+    <$> (symbol WhileToken *> pCondition)
+    <*> pBlockStmt
 
 pForStmt :: Parser Stmt
 pForStmt = do
@@ -205,24 +202,20 @@ pForStmt = do
   _ <- symbol RParenToken
   bodyStmt <- pStmt
   return $ ForStmt initStmt condExpr postStmt bodyStmt
-  
-
 
 pStmt :: Parser Stmt
-pStmt = choice 
-         [
-           pLetStmt,
-           pAssgStmt,
-           pIfStmt,
-           pWhileStmt,
-           pForStmt,
-           pBreakStmt,
-           pPrintLnStmt,
-           pBlockStmt,
-           pReturnStmt
-         ]
-        
-
+pStmt =
+  choice
+    [ pLetStmt
+    , pAssgStmt
+    , pIfStmt
+    , pWhileStmt
+    , pForStmt
+    , pBreakStmt
+    , pPrintLnStmt
+    , pBlockStmt
+    , pReturnStmt
+    ]
 
 -- Parse a boolean literal
 pBoolean :: Parser Expr
@@ -232,31 +225,29 @@ pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ sy
 pSelf :: Parser Expr
 pSelf = LowerSelf <$ symbol LowerCaseSelfToken
 
-
-
 -- Parse parentheses
 pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 -- Parse an if expression
 pIfStmt :: Parser Stmt
-pIfStmt = IfStmt <$> (symbol IfToken *> pCondition)
-         <*> pStmt 
-         <*> optional pElseOrElseIf
+pIfStmt =
+  IfStmt
+    <$> (symbol IfToken *> pCondition)
+    <*> pStmt
+    <*> optional pElseOrElseIf
 
--- Parse an else or else if block #quirk 
+-- Parse an else or else if block #quirk
 pElseOrElseIf :: Parser Stmt
 pElseOrElseIf = do
   _ <- symbol ElseToken
   choice
-    [ 
-      IfStmt <$> (symbol IfToken *> pCondition)
-         <*> (symbol LBraceToken *> pStmt <* symbol RBraceToken)
-         <*> optional pElseOrElseIf
-    , 
-       pStmt 
+    [ IfStmt
+        <$> (symbol IfToken *> pCondition)
+        <*> (symbol LBraceToken *> pStmt <* symbol RBraceToken)
+        <*> optional pElseOrElseIf
+    , pStmt
     ]
-
 
 -- Parse a condition (boolean or comparison expression)
 pCondition :: Parser Expr
@@ -267,18 +258,19 @@ pParensCondition :: Parser Expr
 pParensCondition = between (symbol LParenToken) (symbol RParenToken) pCondition
 
 condTerm :: Parser Expr
-condTerm = choice
-  [ pBoolean
-  , pVariable
-  , pInteger
-  , pParensCondition
-  , pSelf
-  
-  ]
+condTerm =
+  choice
+    [ pBoolean
+    , pVariable
+    , pInteger
+    , pParensCondition
+    , pSelf
+    ]
 
 condOperatorTable :: [[Operator Parser Expr]]
 condOperatorTable =
-  [ [ binary EqualsToken Equals
+  [
+    [ binary EqualsToken Equals
     , binary NotEqualToken NotEquals
     , binary GreaterThanToken GreaterThan
     , binary LessThanToken LessThan
@@ -289,31 +281,36 @@ pTerm :: Parser Expr
 pTerm = pCallExp <|> pSingleTerm
 
 pSingleTerm :: Parser Expr
-pSingleTerm = choice
-  [ pParens 
-  , pInteger
-  , pSelf
-  , pVariable
-  , pNewStruct
-  ]
+pSingleTerm =
+  choice
+    [ pParens
+    , pInteger
+    , pSelf
+    , pVariable
+    , pNewStruct
+    ]
 
 -- Parse an expression
 pExpr :: Parser Expr
-pExpr =  makeExprParser pTerm operatorTable
+pExpr = makeExprParser pTerm operatorTable
 
 -- TABLE
 operatorTable :: [[Operator Parser Expr]]
 operatorTable =
-  [ [ prefix SubtractToken Negative ,
-      binary DotToken DotExpr
+  [
+    [ prefix SubtractToken Negative
+    , binary DotToken DotExpr
     ]
-  , [ binary MultiplyToken Multiply
+  ,
+    [ binary MultiplyToken Multiply
     , binary DivideToken Division
     ]
-  , [ binary AddToken Add
+  ,
+    [ binary AddToken Add
     , binary SubtractToken Sub
     ]
-  , [ binary EqualsToken Equals
+  ,
+    [ binary EqualsToken Equals
     , binary NotEqualToken NotEquals
     , binary GreaterThanToken GreaterThan
     , binary LessThanToken LessThan
@@ -323,7 +320,6 @@ operatorTable =
 -- Helper for binary operators
 binary :: Token -> (Expr -> Expr -> Expr) -> Operator Parser Expr
 binary tok f = InfixL (f <$ symbol tok)
-
 
 -- Helper for prefix operators
 prefix :: Token -> (Expr -> Expr) -> Operator Parser Expr
@@ -341,7 +337,7 @@ parseType :: [Token] -> Either (ParseErrorBundle [Token] Void) Type
 parseType = runParser pType ""
 
 ---------------------------------------------------------------------------------
---NOTES I did the opposite in terms of naming scheme from you guys
+-- NOTES I did the opposite in terms of naming scheme from you guys
 -- this was by accident
 
 -- | Parse a TraitDef from a list of tokens
@@ -375,8 +371,8 @@ pProgramItem = runParser parseProgramItem ""
 -- | Parse a Program from a list of tokens
 pProgram :: [Token] -> Either (ParseErrorBundle [Token] Void) Program
 pProgram = runParser parseProgram ""
------------------------------------------------------------------------------------------
 
+-----------------------------------------------------------------------------------------
 
 pIdentifier :: Parser String
 pIdentifier = do
@@ -386,10 +382,11 @@ pIdentifier = do
     _ -> fail "Expected identifier"
 
 pAtomStructActualParam :: Parser StructActualParam
-pAtomStructActualParam = StructActualParam
-        <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
-        <* symbol ColonToken
-        <*> pExpr
+pAtomStructActualParam =
+  StructActualParam
+    <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
+    <* symbol ColonToken
+    <*> pExpr
 
 pStructActualParam :: Parser StructActualParam
 pStructActualParam = try pAtomStructActualParam
@@ -422,7 +419,6 @@ parseAbsMethodDef =
     <* checkMatchingToken ColonToken
     <*> pType
     <* checkMatchingToken SemiColonToken
-
 
 -- Structdef parser
 -- structdef ::= `struct` structname `{` comma_param `}`
@@ -486,17 +482,15 @@ parseProgramItem :: Parser ProgramItem
 parseProgramItem =
   choice
     [ PI_Struct <$> parseStructDef
-    , PI_Trait  <$> parseTraitDef
-    , PI_Impl   <$> parseImplDef
-    , PI_Func   <$> parseFuncDef
+    , PI_Trait <$> parseTraitDef
+    , PI_Impl <$> parseImplDef
+    , PI_Func <$> parseFuncDef
     ]
 
 -- parse Program
--- program ::= program_item* stmt* 
+-- program ::= program_item* stmt*
 parseProgram :: Parser Program
 parseProgram =
   Program
     <$> many parseProgramItem
     <*> many pStmt
-
- 
