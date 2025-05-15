@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Generation.Generation (
   generateJS,
   translateStmt,
@@ -15,8 +17,9 @@ import System.IO (readFile, writeFile)
 
 -- | generateJS: Converts a Program AST to JavaScript.
 generateJS :: Program -> String
-generateJS program =
-  concatMap translateStmt (progStmts program)
+generateJS (Program items stmts) =
+  concatMap translateItem items
+    ++ concatMap translateStmt stmts
 
 -- Code Generation stuff
 -- Since our "target" langauge is javascript, I'm honestly just testing first if we can take an AST and
@@ -30,11 +33,10 @@ generateJS program =
 -- Test function to see if we can write the output of a generateJS to a test javascript file
 
 createOutputFile :: Program -> String -> IO String
-createOutputFile output outputFilename= do
-    let theOutputFile = outputFilename ++ ".js"
-    writeFile theOutputFile  (generateJS output)
-    return "Successfully Compilied!"
-    
+createOutputFile output outputFilename = do
+  let theOutputFile = outputFilename ++ ".js"
+  writeFile theOutputFile (generateJS output)
+  return "Successfully Compilied!"
 
 -- Translate Type
 -- translate an Type AST node into a string of an equivalent javascript expression
@@ -53,26 +55,25 @@ translateType t = case t of
 -- Translate an expression AST node into a string of an equivalent javascript expression
 translateExpr :: Expr -> String
 translateExpr expr = case expr of
-    Identifier name -> name
-    Int n -> show n
-    Negative e -> "-" ++ translateExpr e
-    Add e1 e2 -> translateExpr e1 ++ "+" ++ translateExpr e2
-    DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
-    Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
-    Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
-    LowerSelf -> "self"
-    Multiply e1 e2 -> translateExpr e1 ++ "*" ++ translateExpr e2
-    Division e1 e2 -> translateExpr e1 ++ "/" ++ translateExpr e2
-    Equals e1 e2 -> translateExpr e1 ++ "===" ++ translateExpr e2
-    NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
-    GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
-    LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
-    NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
-
+  Identifier name -> name
+  Int n -> show n
+  Negative e -> "-" ++ translateExpr e
+  Add e1 e2 -> translateExpr e1 ++ "+" ++ translateExpr e2
+  DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
+  Call e args -> translateExpr e ++ "(" ++ intercalate "," (map translateExpr args) ++ ")"
+  Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
+  LowerSelf -> "self"
+  Multiply e1 e2 -> translateExpr e1 ++ "*" ++ translateExpr e2
+  Division e1 e2 -> translateExpr e1 ++ "/" ++ translateExpr e2
+  Equals e1 e2 -> translateExpr e1 ++ "===" ++ translateExpr e2
+  NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
+  GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
+  LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
+  NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
 
 translateStructParam :: StructActualParam -> String
 translateStructParam sparam = case sparam of
-    StructActualParam str e -> translateExpr e
+  StructActualParam str e -> translateExpr e
 
 -- Translate a Param AST node into a string of an equivalent javascript expression
 translateParam :: Param -> String
@@ -100,27 +101,62 @@ translateStmt stmt = case stmt of
   PrintLnStmt e -> "console.log(" ++ translateExpr e ++ ")" ++ ";"
   _ -> "How did you get here?"
 
--- translateStruct :: StructDef -> String
--- translateStruct (StructDef name fields) =
---   let
---     -- note to self fix Param in StructDef
---     Param fName _fTy = fields
+-- Indent Helper function
+indent :: Int -> String -> String
+indent n s = replicate (n * 2) ' ' ++ s
 
---     header = "class " ++ name ++ " {" ++ "\n"
---     constHeader = indent 1 ("constructor(" ++ fName ++ ") {") ++ "\n"
---     assign = indent 2 ("this." ++ fName ++ " = " ++ fName ++ ";") ++ "\n"
---     ctorEnd = indent 1 "}" ++ "\n"
---     footer = "}" ++ "\n\n"
---    in
---     header
---       ++ constHeader
---       ++ assign
---       ++ ctorEnd
---       ++ footer
+-- Translates a StructDef AST node into a string of an equivalent javascript
+translateStruct :: StructDef -> String
+translateStruct (StructDef name fields) =
+  let
+    -- extract field names
+    fieldNames :: [String]
+    fieldNames = [fname | Param fname _ <- fields]
 
--- translateItem :: ProgramItem -> String
--- translateItem = \case
---   PI_Struct sdef -> genStruct sdef
---   PI_Trait _ -> "" -- will fill in later
---   PI_Impl _ -> "" -- will fill in later
---   PI_Func _ -> "" -- will fill in later
+    -- header and constructor
+    header = "class " ++ name ++ " {\n"
+    consArgs = intercalate ", " fieldNames
+    consStart = indent 1 ("constructor(" ++ consArgs ++ ") {") ++ "\n"
+
+    -- one assignment per field
+    assigns =
+      concatMap
+        (\fn -> indent 2 ("this." ++ fn ++ " = " ++ fn ++ ";") ++ "\n")
+        fieldNames
+
+    consEnd = indent 1 "}\n"
+    footer = "}\n\n"
+   in
+    header
+      ++ consStart
+      ++ assigns
+      ++ consEnd
+      ++ footer
+
+translateImpl :: ImplDef -> String
+translateImpl (ImplDef)
+
+-- Translates a StructDef AST node into a string of an equivalent javascript
+translateFunc :: FuncDef -> String
+translateFunc (FuncDef name params _ body) =
+  let
+    -- pull names out of each Param
+    paramList = intercalate ", " [pname | Param pname _ <- params]
+
+    -- open the function
+    header = "function " ++ name ++ "(" ++ paramList ++ ") {\n"
+
+    -- emit the body exactly as statements
+    stmts = concatMap translateStmt body
+
+    -- close it
+    footer = "}\n\n"
+   in
+    header ++ stmts ++ footer
+
+translateItem :: ProgramItem -> String
+translateItem = \case
+  PI_Struct s -> translateStruct s
+  PI_Trait _ -> "" -- will fill in later
+  PI_Impl impl -> translateImpl impl
+  PI_Func func -> translateFunc func
