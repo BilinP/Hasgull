@@ -88,7 +88,7 @@ translateExpr expr = case expr of
     DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
     Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
     Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
-    LowerSelf -> "self"
+    LowerSelf -> "this"
     Multiply e1 e2 ->  
         let wrap e = case e of
                         Add _ _ -> "(" ++ translateExpr e ++ ")"
@@ -105,7 +105,7 @@ translateExpr expr = case expr of
     NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
     GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
     LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
-    NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
+    NewStruct t1 ps -> "new " ++ translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
 
 
 translateStructParam :: StructActualParam -> String
@@ -125,7 +125,7 @@ translateStmt stmt = case stmt of
     BreakStmt -> "break;"
     LetStmt param e -> "let" ++ " " ++ translateParam param ++ " = " ++ translateExpr e ++ ";"
     AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 ++ "; "
-    BlockStmt stmts -> "{ " ++ intercalate " \n " (map translateStmt stmts) ++ "} " --default show in test means that it just prints the newline character
+    BlockStmt stmts -> "{ " ++ intercalate " " (map translateStmt stmts) ++ "} " --default show in test means that it just prints the newline character
     WhileStmt e stmts -> "while(" ++ translateExpr e ++ ") " ++ translateStmt stmts  
     IfStmt e st maybeElse -> "if( " ++ translateExpr e ++ ") " ++ translateStmt st ++ case maybeElse of
         Just elseStmt -> " else " ++ translateStmt elseStmt

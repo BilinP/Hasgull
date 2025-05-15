@@ -516,7 +516,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate Add that is one add + one int ie 3+3+bill" $
       runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
   , testCase "Translate a Dot Expression into a string" $
-      runGenTest "let x: Int = self.value;" "let x = self.value;"
+      runGenTest "let x: Int = self.value;" "let x = this.value;"
   , testCase "Translate Multiply (x+2)*2" $
       runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
   , testCase "Translate a CallExp" $
@@ -536,7 +536,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
   , testCase "new struct instance" $
-      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
+      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
   , testCase "Translate function definition" $
       runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a,x){a=5; }"
   , testCase "define a Struct" $
