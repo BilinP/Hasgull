@@ -539,7 +539,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate function definition" $
       runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a,x){a=5; }"
   , testCase "actually read from a file" $
-      testreadFile "sample.gull" "increment" ""
+      testreadFile "sample.gull" "increment" "Successfully Compilied!"
   , testCase "test not allowing a non .gull file to compile" $
       testreadFile "fail.py" "willwork" "ILLEGAL FILE"
   ]
