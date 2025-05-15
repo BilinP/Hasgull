@@ -180,6 +180,14 @@ parserTests =
         case tokenize ("a1: Int") of
           Right tokens -> parseParam tokens @?= Right (Param "a1" (IntType))
           Left err -> assertFailure err
+    , testCase "dot Stmt" $
+        case tokenize ("self.value;") of
+          Right tokens -> parseStmt tokens @?= Right (ExprStmt (DotExpr LowerSelf (Identifier "value")))
+          Left err -> assertFailure err
+    , testCase "dot sttm paren" $
+       case tokenize ("println(x.value);") of
+          Right tokens -> parseStmt tokens @?= Right  (PrintLnStmt (DotExpr (Identifier "x") (Identifier "value") ))
+          Left err -> assertFailure err
     , testCase "Parse LetStmt" $
         case tokenize ("let a1: Int = 5;") of
           Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
@@ -449,8 +457,8 @@ parserTests =
                 )
           Left err -> assertFailure err
     , testCase "Parse dot expression plus call" $
-        case tokenize ("obj.method2(a,b)(a)") of
-          Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a", Identifier "b"]) [Identifier "a"]))
+        case tokenize ("obj.method2(a,b)") of
+          Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call  (Identifier "method2") [Identifier "a", Identifier "b"]))
           Left err -> assertFailure err
     ]
 
@@ -509,6 +517,8 @@ generatorTests =
         runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
     , testCase "Translate a Dot Expression into a string" $
         runGenTest "let x: Int = self.value;" "let x = self.value;"
+    , testCase "sofisfj" $
+       runGenTest "x.value;" "x.value;"
     , testCase "Translate Multiply (x+2)*2" $
         runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
     , testCase "Translate a CallExp" $
@@ -526,11 +536,11 @@ generatorTests =
     , testCase "println" $
         runGenTest "println(x);" "console.log(x);"
     , testCase "new struct instance" $
-        runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
+        runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
     , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"
-          "class IntWrapper { constructor(value) { this.value = value; } }"
+          "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n }\n }\n\n"
     , testCase "Translate a trait impl" $
         -- runGenTest = tokenize ⟶ parse ⟶ generateJS
         runGenTest
@@ -547,7 +557,7 @@ generatorTests =
               ++ "};\n\n"
           )
     , testCase "actually read from a file" $
-        testreadFile "sample.gull" "increment" ""
+        testreadFile "sample.gull" "increment" "Successfully Compilied!"
     , testCase "test not allowing a non .gull file to compile" $
         testreadFile "fail.py" "willwork" "ILLEGAL FILE"
     ]

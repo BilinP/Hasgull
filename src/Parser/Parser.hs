@@ -84,7 +84,7 @@ pReturnStmt :: Parser Stmt
 pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
 
 pPrintLnStmt :: Parser Stmt
-pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> (between (symbol LParenToken) (symbol RParenToken) pAtom)) <* symbol SemiColonToken
+pPrintLnStmt = PrintLnStmt <$> (symbol PrintLnToken *> pParensAtom) <* symbol SemiColonToken
 
 ---------------------------------------------------------------------------
 

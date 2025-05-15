@@ -75,7 +75,7 @@ translateExpr expr = case expr of
   NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
   GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
   LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
-  NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
+  NewStruct t1 ps -> "new " ++ translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
 
 translateStructParam :: StructActualParam -> String
 translateStructParam sparam = case sparam of
@@ -105,6 +105,7 @@ translateStmt stmt = case stmt of
       Just reExpr -> translateExpr reExpr ++ ";" ++ " "
       Nothing -> ";"
   PrintLnStmt e -> "console.log(" ++ translateExpr e ++ ")" ++ ";"
+  ExprStmt e1 -> translateExpr e1 ++ ";"
   _ -> "How did you get here?"
 
 -- Indent Helper function
