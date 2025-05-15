@@ -7,11 +7,11 @@ import Data.List (isSuffixOf)
 import Parser.AST
 import Parser.Parser (parseExpression, parseType, parseParam, parseStmt, pTraitDef, pAbsMethodDef, pStructDef, pImplDef, pConcMethodDef, pFuncDef, pProgramItem, pProgram)
 import Generation.Generation (translateStmt,translateType, translateParam, translateExpr,generateJS, createOutputFile)
-import Parser.AST (Program(progItems), Type (StructName), Stmt (ExprStmt), StructActualParam (StructActualParam))
+import Parser.AST (Program(progItems), Type (StructName), Stmt (ExprStmt), StructActualParam (StructActualParam), Expr (Identifier, Call))
 
 
 main :: IO ()
-main = defaultMain generatorTests
+main = defaultMain parserTests
 
 
 tests :: TestTree
@@ -85,6 +85,10 @@ tokenizerTests = testGroup "Tokenizer Tests"
   ,
      testCase "Invalid integer error message" $
       tokenize "123abc" @?= Left "Invalid integer: 123abc"
+  ,
+       testCase "Tokenize Subtract, Multiply, Divide tokens" $
+      either assertFailure (@=? [IntegerToken 10, SemiColonToken]) 
+      (tokenize "10;")
 
   , 
    testCase "Testing Token derived Show" $
@@ -160,6 +164,10 @@ parserTests = testGroup "Parser Tests"
       case tokenize "self" of
         Right tokens -> parseExpression tokens @?= Right (LowerSelf)
         Left err -> assertFailure err
+  , testCase "parse calldot" $
+     case tokenize "print()" of
+      Right tokens -> parseExpression tokens @?= Right (Call (Identifier "print") [] ) 
+      Left err -> assertFailure err
   , testCase "parse dot expressions" $
       case tokenize "self.value" of
         Right tokens -> parseExpression tokens @?= Right (DotExpr LowerSelf (Identifier "value"))
@@ -207,6 +215,11 @@ parserTests = testGroup "Parser Tests"
   , testCase "Parse LetStmt" $
       case tokenize ("let a1: Int = 5;") of
         Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
+        Left err -> assertFailure err
+  , testCase "ExprStmt" $
+     case tokenize ("5 ;") of
+        Right tokens -> parseStmt tokens @?= Right (ExprStmt (Int 5))
+        Left err -> assertFailure err
   , testCase "Parse AssignStmt" $
       case tokenize ("a1 = 5;") of
         Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
@@ -249,8 +262,8 @@ parserTests = testGroup "Parser Tests"
         Right tokens -> parseStmt tokens @?= Right (ReturnStmt Nothing )
         Left err -> assertFailure err
   , testCase "Parse Block stmts" $
-      case tokenize ("{let a1: Int = 5; a1 = 6;}") of
-        Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6) ] ) 
+      case tokenize ("{let a1: Int = 5; a1 = 6; a1;}") of
+        Right tokens -> parseStmt tokens @?= Right (BlockStmt [LetStmt (Param "a1" IntType) (Int 5), AssgStmt (Identifier "a1") (Int 6), ExprStmt (Identifier "a1") ] ) 
         Left err -> assertFailure err
   , testCase "Parse TraitDef with a single abstract method" $
       case tokenize "trait MyTrait { method doIt(x: Int): Void; }" of
@@ -439,8 +452,8 @@ parserTests = testGroup "Parser Tests"
     Left err -> assertFailure err
   , 
       testCase "Parse dot expression plus call" $
-      case tokenize ("obj.method2(a,b)(a)") of
-        Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Call (Identifier "method2") [Identifier "a",Identifier "b"]) [Identifier "a"]))
+      case tokenize ("obj.method2(a,b)") of
+        Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj")  (Call (Identifier "method2") [Identifier "a",Identifier "b"]))
         Left err -> assertFailure err
   ]     
   
@@ -495,6 +508,8 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "break;" "break;"
   , testCase "Translate Int Expr" $
       runGenTest "let x: Int = 5;" "let x = 5;"
+  , testCase "translate higher order type" $
+      runGenTest "Int" ""
   , testCase "Translate Add with two Ints" $
       runGenTest "let x: Int = 7+7;" "let x = 7+7;"
   , testCase "Translate Add that is one add + one int ie 3+3+bill" $
@@ -505,6 +520,8 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
   , testCase "Translate a CallExp" $
       runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
+  , testCase "calldot stmt" $
+      runGenTest "print()" "idk"
   , testCase "Translate let a1: Int = 5;" $
       runGenTest "let a1: Int = 5;" "let a1 = 5;"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $

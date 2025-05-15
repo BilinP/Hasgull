@@ -37,9 +37,9 @@ pCommaExp = option [] $ do
 pCallExp :: Parser Expr
 pCallExp = do
   func <- pSingleTerm
-  args <- many (between (symbol LParenToken) (symbol RParenToken) pCommaExp)
-  pure (foldl Call func args) --Pure is a wrapper that succeeds without consuming input, at least that's what the documentation says
-
+  lookAhead (symbol LParenToken) -- Only succeed if next token is LParenToken
+  args <- between (symbol LParenToken) (symbol RParenToken) pCommaExp
+  pure (Call func args)
 
 
 
@@ -173,15 +173,15 @@ pAssgStmt = AssgStmt <$> (pExpr <* symbol EqualToken)
 pAssgStmtSemiLess :: Parser Stmt
 pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
                      <*> pExpr 
-                     
+
+
+                 
 
 pExprStmt :: Parser Stmt
-pExprStmt = do
-  expd <- pExpr
-  _ <- symbol SemiColonToken 
-  return $ ExprStmt expd
+pExprStmt = ExprStmt <$> pPainandMisery
 
 
+  
 
 pBreakStmt :: Parser Stmt
 pBreakStmt = BreakStmt <$ (symbol BreakToken <* symbol SemiColonToken)
@@ -210,16 +210,18 @@ pForStmt = do
 
 pStmt :: Parser Stmt
 pStmt = choice 
-         [
+         [ 
            pLetStmt,
-           pAssgStmt,
+           try pAssgStmt,
            pIfStmt,
            pWhileStmt,
            pForStmt,
            pBreakStmt,
            pPrintLnStmt,
            pBlockStmt,
-           pReturnStmt
+           pReturnStmt,
+           pExprStmt
+        
          ]
         
 
@@ -262,6 +264,9 @@ pElseOrElseIf = do
 pCondition :: Parser Expr
 pCondition = makeExprParser condTerm condOperatorTable
 
+pPainandMisery :: Parser Expr
+pPainandMisery = pExpr <* symbol SemiColonToken
+
 -- Parse conditions enclosed in parentheses
 pParensCondition :: Parser Expr
 pParensCondition = between (symbol LParenToken) (symbol RParenToken) pCondition
@@ -286,7 +291,7 @@ condOperatorTable =
   ]
 
 pTerm :: Parser Expr
-pTerm = pCallExp <|> pSingleTerm
+pTerm = try pCallExp <|> pSingleTerm
 
 pSingleTerm :: Parser Expr
 pSingleTerm = choice
@@ -299,7 +304,7 @@ pSingleTerm = choice
 
 -- Parse an expression
 pExpr :: Parser Expr
-pExpr =  makeExprParser pTerm operatorTable
+pExpr = makeExprParser pTerm operatorTable
 
 -- TABLE
 operatorTable :: [[Operator Parser Expr]]
@@ -331,7 +336,7 @@ prefix tok f = Prefix (f <$ symbol tok)
 
 -- Parse a specific token
 symbol :: Token -> Parser Token
-symbol t = satisfy (== t)
+symbol t = satisfy (== t) 
 
 -- Entry point for parsing expressions
 parseExpression :: [Token] -> Either (ParseErrorBundle [Token] Void) Expr
