@@ -11,7 +11,7 @@ import Parser.AST (Program(progItems), Type (StructName), Stmt (ExprStmt), Struc
 
 
 main :: IO ()
-main = defaultMain parserTests
+main = defaultMain generatorTests
 
 
 tests :: TestTree
@@ -521,7 +521,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate a CallExp" $
       runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
   , testCase "calldot stmt" $
-      runGenTest "print()" "idk"
+      runGenTest "print();" "print();"
   , testCase "Translate let a1: Int = 5;" $
       runGenTest "let a1: Int = 5;" "let a1 = 5;"
   , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
@@ -536,6 +536,8 @@ generatorTests = testGroup "Generator Tests"
       runGenTest "println(x);" "console.log(x);"
   , testCase "new struct instance" $
       runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
+  , testCase "Translate function definition" $
+      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a,x){a=5; }"
   , testCase "actually read from a file" $
       testreadFile "sample.gull" "increment" ""
   , testCase "test not allowing a non .gull file to compile" $

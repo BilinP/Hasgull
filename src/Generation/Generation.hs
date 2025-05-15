@@ -12,10 +12,23 @@ import System.IO(writeFile,readFile)
 -- | generateJS: Converts a Program AST to JavaScript.
 generateJS :: Program -> String
 generateJS program =
-  concatMap translateStmt (progStmts program)
+  let progJS = concatMap translateProgramItem (progItems program)
+      stmtsJS = concatMap translateStmt (progStmts program)
+  in progJS ++ stmtsJS
 
 
+translateProgramItem :: ProgramItem -> String
+translateProgramItem item = case item of
+  PI_Func funcdef -> translateFuncDef funcdef
+  _ -> ""
 
+
+translateFuncDef :: FuncDef -> String
+translateFuncDef (FuncDef name params _retType body) =
+  "function " ++ name ++ "(" ++ intercalate "," (map (\(Param p _) -> p) params) ++ ")" ++ translateBlock body
+
+translateBlock :: [Stmt] -> String
+translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
 
 -- Code Generation stuff
 -- Since our "target" langauge is javascript, I'm honestly just testing first if we can take an AST and 
@@ -61,8 +74,18 @@ translateExpr expr = case expr of
     Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
     Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
     LowerSelf -> "self"
-    Multiply e1 e2 -> translateExpr e1 ++ "*" ++ translateExpr e2
-    Division e1 e2 -> translateExpr e1 ++ "/" ++ translateExpr e2
+    Multiply e1 e2 ->  
+        let wrap e = case e of
+                        Add _ _ -> "(" ++ translateExpr e ++ ")"
+                        Sub _ _ -> "(" ++ translateExpr e ++ ")"
+                        _       -> translateExpr e
+        in wrap e1 ++ "*" ++ wrap e2
+    Division e1 e2 -> 
+        let wrap e = case e of
+                        Add _ _ -> "(" ++ translateExpr e ++ ")"
+                        Sub _ _ -> "(" ++ translateExpr e ++ ")"
+                        _       -> translateExpr e
+        in wrap e1 ++ "/" ++ wrap e2
     Equals e1 e2 -> translateExpr e1 ++ "===" ++ translateExpr e2
     NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
     GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
@@ -78,6 +101,7 @@ translateStructParam sparam = case sparam of
 translateParam :: Param -> String
 translateParam (Param name t) = --Since we are converting to javascript, then why would we include the type? The paraser should already have done the check on typing
     name
+
 
 -- Translate a Stmt AST node into a string of an equivalent javascript expression
 translateStmt :: Stmt -> String
@@ -95,6 +119,7 @@ translateStmt stmt = case stmt of
         Just reExpr -> translateExpr reExpr ++ ";" ++ " "
         Nothing -> ";"
     PrintLnStmt e -> "console.log(" ++ translateExpr e ++ ")" ++ ";"
+    ExprStmt e -> translateExpr e ++ ";"
     _ -> "How did you get here?"
 
 
