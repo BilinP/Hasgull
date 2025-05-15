@@ -129,6 +129,7 @@ pBooleanType = BooleanType <$ symbol BooleanToken
 pSelfType :: Parser Type
 pSelfType = SelfType <$ symbol SelfToken
 
+
 pStructname :: Parser Type
 pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
 
@@ -234,6 +235,12 @@ pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ sy
 pSelf :: Parser Expr
 pSelf = LowerSelf <$ symbol LowerCaseSelfToken
 
+pTrue :: Parser Expr
+pTrue = Trueish <$ symbol TrueToken
+
+pFalse :: Parser Expr
+pFalse = Falseish <$ symbol FalseToken
+
 -- Parse parentheses
 pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
@@ -299,6 +306,8 @@ pSingleTerm =
     , pInteger
     , pSelf
     , pVariable
+    , pTrue
+    , pFalse
     , pNewStruct
     ]
 

@@ -26,6 +26,8 @@ data Expr
   | Call Expr [Expr]
   | Sub Expr Expr
   | LowerSelf 
+  | Trueish
+  | Falseish
   | Multiply Expr Expr
   | Division Expr Expr       
   | Equals Expr Expr         

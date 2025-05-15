@@ -1,7 +1,7 @@
 import Data.List (isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
-import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName))
+import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName), Expr (Trueish))
 import Parser.Parser (pAbsMethodDef, pConcMethodDef, pFuncDef, pImplDef, pProgram, pProgramItem, pStructDef, pTraitDef, parseExpression, parseParam, parseStmt, parseType)
 import System.IO (readFile)
 import Test.Tasty
@@ -10,7 +10,7 @@ import Tokenizer.Token (Token (..))
 import Tokenizer.Tokenizer
 
 main :: IO ()
-main = defaultMain generatorTests
+main = defaultMain parserTests
 
 tests :: TestTree
 tests =
@@ -191,6 +191,11 @@ parserTests =
     , testCase "Parse LetStmt" $
         case tokenize ("let a1: Int = 5;") of
           Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
+          Left err -> assertFailure err
+    , testCase "Parse LetStmt" $
+        case tokenize ("let a1: Boolean = true;") of
+          Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (BooleanType)) (Trueish))
+          Left err -> assertFailure err
     , testCase "Parse AssignStmt" $
         case tokenize ("a1 = 5;") of
           Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))

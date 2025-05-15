@@ -89,6 +89,8 @@ translateExpr expr = case expr of
     Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
     Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
     LowerSelf -> "this"
+    Trueish -> "true"
+    Falseish -> "false"
     Multiply e1 e2 ->  
         let wrap e = case e of
                         Add _ _ -> "(" ++ translateExpr e ++ ")"
