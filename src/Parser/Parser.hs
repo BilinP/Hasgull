@@ -178,7 +178,7 @@ pAssgStmtSemiLess = AssgStmt <$> (pExpr <* symbol EqualToken)
                  
 
 pExprStmt :: Parser Stmt
-pExprStmt = ExprStmt <$> pPainandMisery
+pExprStmt = ExprStmt <$> pExpr <* symbol SemiColonToken
 
 
   
