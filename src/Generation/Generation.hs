@@ -17,6 +17,7 @@ import qualified Data.Map as Map
 import Generation.EnvTable (TraitTable, buildTraitTable,VarTable,buildVarTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
+import qualified Tokenizer.Token as then
 
 -- | generateJS: Converts a Program AST to JavaScript.
 generateJS :: Program -> String
@@ -49,13 +50,10 @@ translateBlock :: [Stmt] -> String
 translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
 
 -- Code Generation stuff
--- Since our "target" langauge is javascript, I'm honestly just testing first if we can take an AST and
--- write to a string, then idk put into a javascript file
 
--- Thoughts
--- Have lists constructed at block stmts or equivalents that get passed into translate calls?
--- If it's a letstmt or some form of initilizer, we push into list
--- Any call or AST part that isn't an immediate, we check that list, throw exception if not.
+
+-- Current set Generator. Due to time limitations, we can't exactly handle higher order type for function declarations
+-- Or have some of variable checker, it still compiles but it's undefined behavior and in javascript's hands by then.AddToken
 
 -- Test function to see if we can write the output of a generateJS to a test javascript file
 
@@ -80,6 +78,9 @@ translateType t = case t of
      in typesStr ++ " => " ++ returnTypeStr
 
 -- Translate an expression AST node into a string of an equivalent javascript expression
+-- idea, do the look up table stuff for the first expression and second in add, sub, divide, multiply 
+-- Because 
+
 translateExpr :: Expr -> String
 translateExpr expr = case expr of
     Identifier name -> name
