@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Docs.FormalSyntax</title><link href="linuwial.css" rel="stylesheet" type="text/css" title="Linuwial" /><link rel="stylesheet" type="text/css" href="quick-jump.css" /><link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700" /><script src="haddock-bundle.min.js" async="async" type="text/javascript"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { processClass: "mathjax", ignoreClass: ".*" } });</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script></head><body><div id="package-header"><span class="caption">Hasgull-0.1.0.0</span><ul class="links" id="page-menu"><li><a href="src/Docs.FormalSyntax.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul></div><div id="content"><div id="module-header"><table class="info"><tr><th>Safe Haskell</th><td>Safe-Inferred</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Docs.FormalSyntax</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>This module provides a formal syntax definition for Hasgull in an extended
+EBNF-style notation. Copy and paste the following definitions as a reference.</p><h2>Formal Syntax Definition</h2><h3>Types and Identifiers</h3><ul><li>**var**  
+  Represents a variable.</li><li>**structname**  
+  Represents the name of a struct.</li><li>**traitname**  
+  Represents the name of a trait (typeclass).</li><li>**i**  
+  Represents an integer.</li></ul><h3>Productions</h3><p>comma_type ::= [type (`,` type)*]</p><p>type ::=
+  <code><a href="../base-4.19.2.0/Data-Int.html#t:Int" title="Data.Int">Int</a></code> | <code>Void</code> | <code>Boolean</code> | Built-in types
+  <code>Self</code> | Refers to our own type in a trait
+  structname | Structs are a valid kind of type
+  `(` type `)` | Parenthesized type
+  `(` comma_type `)` `=&gt;` type Higher-order function</p><p>param ::= var <code>:</code> type</p><p>comma_param ::= [param (`,` param)*]</p><p>structdef ::= <code>struct</code> structname `{` comma_param `}`</p><p>Definition of an abstract method
+abs_methoddef ::= <code>method</code> var (` comma_param `)` <code>:</code> type `;`</p><p>Definition of a concrete method
+conc_methoddef ::=
+  <code>method</code> var (` comma_param `)` <code>:</code> type `{` stmt* `}`</p><p>Definition of a trait (typeclass)
+traitdef ::= <code>trait</code> traitname `{` abs_methoddef* `}`</p><p>Definition of an implementation of a typeclass
+impldef ::= <code>impl</code> traitname <code>for</code> type `{` conc_methoddef* `}`</p><p>Definition of a toplevel function
+funcdef ::= <code>func</code> var `(` comma_param `)` <code>:</code> type
+            `{` stmt* `}` </p><p>stmt ::= `let` param `=` exp `;` | Variable declaration
+         var `=` exp `;` | Assignment
+         `if` `(` exp `)` stmt [`else` stmt] | if
+         <code>while</code> `(` exp `)` stmt | while
+         <code><a href="../base-4.19.2.0/GHC-List.html#v:break" title="GHC.List">break</a></code> `;` | break
+         <code>println</code> `(` exp `)` | Printing something
+         `{` stmt* `}` | Block
+         <code><a href="../base-4.19.2.0/Control-Monad.html#v:return" title="Control.Monad">return</a></code> [exp] `;` | Return
+         exp `;` Expression statements</p><p>struct_actual_param ::= var <code>:</code> exp</p><p>struct_actual_params ::=
+  [struct_actual_param (`,` struct_actual_param)*]</p><p>primary_exp ::= i | var | Integers and variables
+                <code>true</code> | <code>false</code> | Booleans
+                <code>self</code> | Instance on which we call a method
+                `(` exp `)` | Parenthesized expression</p><p>Creates a new instance of a struct
+                <code>new</code> structname `{` struct_actual_params `}`</p><p>Accessing a struct field or method
+dot_exp ::= primary_exp (<code><a href="../base-4.19.2.0/Data-Function.html#v:." title="Data.Function">.</a></code> var)*</p><p>call_exp ::= dot_exp (`(` comma_exp `)`)*</p><p>mult_exp ::= call_exp ((<code><a href="../base-4.19.2.0/Prelude.html#v:-42-" title="Prelude">*</a></code> | <code><a href="../base-4.19.2.0/Prelude.html#v:-47-" title="Prelude">/</a></code>) call_exp)*</p><p>add_exp ::= mult_exp ((<code><a href="../base-4.19.2.0/Prelude.html#v:-43-" title="Prelude">+</a></code> | <code><a href="../base-4.19.2.0/Prelude.html#v:-45-" title="Prelude">-</a></code>) mult_exp)*</p><p>less_than_exp ::= add_exp [<code><a href="../base-4.19.2.0/Data-Ord.html#v:-60-" title="Data.Ord">&lt;</a></code> add_exp]</p><p>equals_exp ::= less_than_exp [(<code><a href="../base-4.19.2.0/Data-Eq.html#v:-61--61-" title="Data.Eq">==</a></code> | <code>!=</code>) less_than_exp]</p><p>exp ::= equals_exp</p><p>program_item ::= structdef | traitdef | impldef | funcdef</p><p>program ::= program_item* stmt* stmt* is the entry point</p></div></div><div id="interface"></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.30.0</p></div></body></html>
