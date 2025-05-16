@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir haddock-site
           # Replace this path if needed; it depends on your resolver/package layout
-          cp -r .stack-work/dist/*/*/doc/html/* haddock-site/
+          cp -r .stack-work/dist/*/*/doc/html/Hasgull/* haddock-site/
 
       - name: Deploy to docs branch
         uses: peaceiris/actions-gh-pages@v3
