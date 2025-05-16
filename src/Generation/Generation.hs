@@ -126,7 +126,11 @@ wrapBlock stmt = case stmt of
     BlockStmt stmts -> translateBlock stmts
     _               -> translateStmt stmt
 
-
+--Helper function for the assgStmt in the For Loop
+translateIterForLoop :: Stmt -> String
+translateIterForLoop val = case val of
+    AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 
+    _ -> "err"
 
 
 -- Translate a Stmt AST node into a string of an equivalent javascript expression
@@ -142,7 +146,7 @@ translateStmt stmt = case stmt of
             Just elseStmt -> " else " ++ wrapBlock elseStmt
             Nothing -> ""
     ForStmt initS evalute update body -> 
-        "for(" ++ translateStmt initS ++ ";" ++ translateExpr evalute ++ " ; " ++ translateStmt update ++ ")" ++ wrapBlock body
+        "for(" ++ translateStmt initS  ++ translateExpr evalute ++ " ; " ++ translateIterForLoop update ++ ")" ++ wrapBlock body
     ReturnStmt maybeExpr -> "return " ++ case maybeExpr of
         Just reExpr -> translateExpr reExpr ++ ";" ++ " "
         Nothing -> ";"

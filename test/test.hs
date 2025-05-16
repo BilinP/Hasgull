@@ -1,7 +1,7 @@
 import Data.List (isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
-import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName), Expr (Trueish))
+import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName), Expr (Trueish, Falseish))
 import Parser.Parser (pAbsMethodDef, pConcMethodDef, pFuncDef, pImplDef, pProgram, pProgramItem, pStructDef, pTraitDef, parseExpression, parseParam, parseStmt, parseType)
 import System.IO (readFile)
 import Test.Tasty
@@ -135,6 +135,14 @@ parserTests =
     , testCase "parse self expression" $
         case tokenize "self" of
           Right tokens -> parseExpression tokens @?= Right (LowerSelf)
+          Left err -> assertFailure err
+    , testCase "Parse true" $
+        case tokenize "true" of
+          Right tokens -> parseExpression tokens @?= Right (Trueish)
+          Left err -> assertFailure err
+    , testCase "Parse false" $
+        case tokenize "false" of
+          Right tokens -> parseExpression tokens @?= Right (Falseish)
           Left err -> assertFailure err
     , testCase "parse dot expressions" $
         case tokenize "self.value" of
@@ -543,7 +551,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "new struct instance" $
       runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
   , testCase "Translate function definition" $
-      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a,x){a=5; }"
+      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a, x){\na=5; }\n\n"
   , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"
