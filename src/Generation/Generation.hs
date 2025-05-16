@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Generation.Generation (
   generateJS,
@@ -38,7 +39,6 @@ generateJS (Program items stmts) =
 --translateProgramItem item = case item of
 --  PI_Func funcdef -> translateFuncDef funcdef
 --  _ -> ""
-
 
 
 translateFuncDef :: FuncDef -> String
@@ -125,6 +125,8 @@ wrapBlock :: Stmt -> String
 wrapBlock stmt = case stmt of
     BlockStmt stmts -> translateBlock stmts
     _               -> translateStmt stmt
+
+
 
 
 -- Translate a Stmt AST node into a string of an equivalent javascript expression
@@ -234,6 +236,24 @@ translateImpl tbl (ImplDef traitName forType methods) =
         stmts = concatMap translateStmt body
         footer = "};\n\n"
      in header ++ stmts ++ footer
+  emitMethod IntType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "Number" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer 
+  emitMethod BooleanType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "Boolean" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer
+  emitMethod VoidType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "undefined" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer   
   emitMethod _ _ = ""
 
 translateItem :: TraitTable -> ProgramItem -> String

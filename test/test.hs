@@ -547,7 +547,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"
-          "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n }\n }\n\n"
+          "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n  }\n}\n\n"
     , testCase "Translate a trait impl" $
         -- runGenTest = tokenize ⟶ parse ⟶ generateJS
         runGenTest
