@@ -25,10 +25,10 @@ source-repository head
 
 library
   exposed-modules:
+      Docs.FormalSyntax
+      Generation.EnvTable
       Generation.Generation
-      Lib
       Parser.AST
-      Parser.HelperFuncs
       Parser.Parser
       Tokenizer.Token
       Tokenizer.Tokenizer
@@ -43,6 +43,7 @@ library
   build-depends:
       array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
@@ -63,6 +64,7 @@ executable Hasgull-exe
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
@@ -84,6 +86,7 @@ test-suite Hasgull-test
       Hasgull
     , array >=0.5.8.0
     , base >=4.7 && <5
+    , containers
     , megaparsec
     , parser-combinators
     , tasty
