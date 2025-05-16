@@ -1,0 +1,45 @@
+name: Build and Deploy Haddock Docs
+
+on:
+  push:
+    branches:
+      - docs
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+
+      - name: Set up Haskell with Stack
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: '9.2.8'  # Or your actual GHC version
+          enable-stack: true
+
+      - name: Cache stack dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.stack
+            .stack-work
+          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml.lock') }}
+
+      - name: Build Haddock docs
+        run: stack haddock --no-haddock-deps
+
+      - name: Prepare docs folder
+        run: |
+          mkdir haddock-site
+          # Replace this path if needed; it depends on your resolver/package layout
+          cp -r .stack-work/dist/*/*/doc/html/* haddock-site/
+
+      - name: Deploy to docs branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: web
+          publish_dir: ./haddock-site
+          force_orphan: true
