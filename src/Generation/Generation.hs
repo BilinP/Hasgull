@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Generation.Generation (
   generateJS,
@@ -13,7 +14,7 @@ import Prelude
 
 import Data.List (intercalate, (\\))
 import qualified Data.Map as Map
-import Generation.EnvTable (TraitTable, buildTraitTable)
+import Generation.EnvTable (TraitTable, buildTraitTable,VarTable,buildVarTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
 
@@ -22,6 +23,7 @@ generateJS :: Program -> String
 generateJS (Program items stmts) =
   let
     traitTbl = buildTraitTable items
+    varTbl = buildVarTable stmts
     itemJS = concatMap (translateItem traitTbl) items
     stmtJS = concatMap translateStmt stmts
    in
@@ -37,7 +39,6 @@ generateJS (Program items stmts) =
 --translateProgramItem item = case item of
 --  PI_Func funcdef -> translateFuncDef funcdef
 --  _ -> ""
-
 
 
 translateFuncDef :: FuncDef -> String
@@ -88,7 +89,9 @@ translateExpr expr = case expr of
     DotExpr e1 e2 -> translateExpr e1 ++ "." ++ translateExpr e2
     Call e args -> translateExpr e ++ "(" ++  intercalate "," (map translateExpr args) ++ ")"
     Sub e1 e2 -> translateExpr e1 ++ "-" ++ translateExpr e2
-    LowerSelf -> "self"
+    LowerSelf -> "this"
+    Trueish -> "true"
+    Falseish -> "false"
     Multiply e1 e2 ->  
         let wrap e = case e of
                         Add _ _ -> "(" ++ translateExpr e ++ ")"
@@ -105,7 +108,7 @@ translateExpr expr = case expr of
     NotEquals e1 e2 -> translateExpr e1 ++ "!==" ++ translateExpr e2
     GreaterThan e1 e2 -> translateExpr e1 ++ ">" ++ translateExpr e2
     LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
-    NewStruct t1 ps -> translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
+    NewStruct t1 ps -> "new " ++ translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
 
 
 translateStructParam :: StructActualParam -> String
@@ -123,6 +126,12 @@ wrapBlock stmt = case stmt of
     BlockStmt stmts -> translateBlock stmts
     _               -> translateStmt stmt
 
+--Helper function for the assgStmt in the For Loop
+translateIterForLoop :: Stmt -> String
+translateIterForLoop val = case val of
+    AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 
+    _ -> "err"
+
 
 -- Translate a Stmt AST node into a string of an equivalent javascript expression
 translateStmt :: Stmt -> String
@@ -137,7 +146,7 @@ translateStmt stmt = case stmt of
             Just elseStmt -> " else " ++ wrapBlock elseStmt
             Nothing -> ""
     ForStmt initS evalute update body -> 
-        "for(" ++ translateStmt initS ++ ";" ++ translateExpr evalute ++ " ; " ++ translateStmt update ++ ")" ++ wrapBlock body
+        "for(" ++ translateStmt initS  ++ translateExpr evalute ++ " ; " ++ translateIterForLoop update ++ ")" ++ wrapBlock body
     ReturnStmt maybeExpr -> "return " ++ case maybeExpr of
         Just reExpr -> translateExpr reExpr ++ ";" ++ " "
         Nothing -> ";"
@@ -231,6 +240,24 @@ translateImpl tbl (ImplDef traitName forType methods) =
         stmts = concatMap translateStmt body
         footer = "};\n\n"
      in header ++ stmts ++ footer
+  emitMethod IntType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "Number" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer 
+  emitMethod BooleanType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "Boolean" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer
+  emitMethod VoidType (ConcMethodDef mName params _ body) =
+    let args = intercalate ", " [n | Param n _ <- params]
+        header = "undefined" ++ ".prototype." ++ mName ++ " = function(" ++ args ++ ") {\n"
+        stmts = concatMap translateStmt body
+        footer = "};\n\n"
+     in header ++ stmts ++ footer   
   emitMethod _ _ = ""
 
 translateItem :: TraitTable -> ProgramItem -> String

@@ -80,7 +80,7 @@ pParensAtom = between (symbol LParenToken) (symbol RParenToken) pExpr
 
 -- | Parse a return statement.
 pReturnStmt :: Parser Stmt
-pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pAtom) <* symbol SemiColonToken)
+pReturnStmt = ReturnStmt <$> (symbol ReturnToken *> (optional pExpr) <* symbol SemiColonToken)
 
 -- | Parse a print statement.
 pPrintLnStmt :: Parser Stmt
@@ -138,7 +138,6 @@ pBooleanType = BooleanType <$ symbol BooleanToken
 pSelfType :: Parser Type
 pSelfType = SelfType <$ symbol SelfToken
 
--- | Parse a struct name (as a type).
 pStructname :: Parser Type
 pStructname = StructName <$> (satisfy isIdentifierToken >>= \(IdentifierToken name) -> pure name)
 
@@ -243,7 +242,13 @@ pBoolean = (Identifier "true" <$ symbol TrueToken) <|> (Identifier "false" <$ sy
 pSelf :: Parser Expr
 pSelf = LowerSelf <$ symbol LowerCaseSelfToken
 
--- | Parse an expression enclosed in parentheses.
+pTrue :: Parser Expr
+pTrue = Trueish <$ symbol TrueToken
+
+pFalse :: Parser Expr
+pFalse = Falseish <$ symbol FalseToken
+
+-- Parse parentheses
 pParens :: Parser Expr
 pParens = between (symbol LParenToken) (symbol RParenToken) pExpr
 
@@ -306,11 +311,14 @@ pTerm = try pCallExp <|> pSingleTerm
 pSingleTerm :: Parser Expr
 pSingleTerm =
   choice
-    [ pParens,
-      pInteger,
-      pSelf,
-      pVariable,
-      pNewStruct
+
+    [ pParens
+    , pInteger
+    , pSelf
+    , pVariable
+    , pTrue
+    , pFalse
+    , pNewStruct
     ]
 
 -- | Parse an expression.

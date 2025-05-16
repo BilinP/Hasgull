@@ -1,7 +1,7 @@
 import Data.List (isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
-import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName))
+import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName), Expr (Trueish, Falseish))
 import Parser.Parser (pAbsMethodDef, pConcMethodDef, pFuncDef, pImplDef, pProgram, pProgramItem, pStructDef, pTraitDef, parseExpression, parseParam, parseStmt, parseType)
 import System.IO (readFile)
 import Test.Tasty
@@ -136,6 +136,14 @@ parserTests =
         case tokenize "self" of
           Right tokens -> parseExpression tokens @?= Right (LowerSelf)
           Left err -> assertFailure err
+    , testCase "Parse true" $
+        case tokenize "true" of
+          Right tokens -> parseExpression tokens @?= Right (Trueish)
+          Left err -> assertFailure err
+    , testCase "Parse false" $
+        case tokenize "false" of
+          Right tokens -> parseExpression tokens @?= Right (Falseish)
+          Left err -> assertFailure err
     , testCase "parse dot expressions" $
         case tokenize "self.value" of
           Right tokens -> parseExpression tokens @?= Right (DotExpr LowerSelf (Identifier "value"))
@@ -191,6 +199,11 @@ parserTests =
     , testCase "Parse LetStmt" $
         case tokenize ("let a1: Int = 5;") of
           Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (IntType)) (Int 5))
+          Left err -> assertFailure err
+    , testCase "Parse LetStmt" $
+        case tokenize ("let a1: Boolean = true;") of
+          Right tokens -> parseStmt tokens @?= Right (LetStmt (Param "a1" (BooleanType)) (Trueish))
+          Left err -> assertFailure err
     , testCase "Parse AssignStmt" $
         case tokenize ("a1 = 5;") of
           Right tokens -> parseStmt tokens @?= Right (AssgStmt (Identifier "a1") (Int 5))
@@ -516,7 +529,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "Translate Add that is one add + one int ie 3+3+bill" $
       runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
   , testCase "Translate a Dot Expression into a string" $
-      runGenTest "let x: Int = self.value;" "let x = self.value;"
+      runGenTest "let x: Int = self.value;" "let x = this.value;"
   , testCase "Translate Multiply (x+2)*2" $
       runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
   , testCase "Translate a CallExp" $
@@ -536,13 +549,13 @@ generatorTests = testGroup "Generator Tests"
   , testCase "println" $
       runGenTest "println(x);" "console.log(x);"
   , testCase "new struct instance" $
-      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = car(2,3);"
+      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
   , testCase "Translate function definition" $
-      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a,x){a=5; }"
+      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a, x){\na=5; }\n\n"
   , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"
-          "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n }\n }\n\n"
+          "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n  }\n}\n\n"
     , testCase "Translate a trait impl" $
         -- runGenTest = tokenize ⟶ parse ⟶ generateJS
         runGenTest
