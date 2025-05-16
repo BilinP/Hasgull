@@ -13,7 +13,7 @@ import Prelude
 
 import Data.List (intercalate, (\\))
 import qualified Data.Map as Map
-import Generation.EnvTable (TraitTable, buildTraitTable)
+import Generation.EnvTable (TraitTable, buildTraitTable,VarTable,buildVarTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
 
@@ -22,6 +22,7 @@ generateJS :: Program -> String
 generateJS (Program items stmts) =
   let
     traitTbl = buildTraitTable items
+    varTbl = buildVarTable stmts
     itemJS = concatMap (translateItem traitTbl) items
     stmtJS = concatMap translateStmt stmts
    in

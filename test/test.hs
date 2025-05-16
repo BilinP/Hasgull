@@ -10,7 +10,7 @@ import Tokenizer.Token (Token (..))
 import Tokenizer.Tokenizer
 
 main :: IO ()
-main = defaultMain parserTests
+main = defaultMain generatorTests
 
 tests :: TestTree
 tests =
