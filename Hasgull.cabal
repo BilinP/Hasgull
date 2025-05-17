@@ -32,7 +32,6 @@ library
       Parser.Parser
       Tokenizer.Token
       Tokenizer.Tokenizer
-      Type.Type
   other-modules:
       Paths_Hasgull
   autogen-modules:

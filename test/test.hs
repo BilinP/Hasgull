@@ -18,7 +18,9 @@ tests :: TestTree
 tests =
   testGroup
     "All Tests"
-    [ parserTests
+
+    [ tokenizerTests
+    , parserTests
     , generatorTests
     ]
 
