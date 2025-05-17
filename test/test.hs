@@ -524,6 +524,8 @@ generatorTests =
     "Generator Tests"
     [ testCase "Translate BreakStmt" $
         runGenTest "break;" "break;"
+    , testCase "translate negative" $
+        runGenTest "-5;" "-5;" 
     , testCase "Translate Int Expr" $
         runGenTest "let x: Int = 5;" "let x = 5;"
     , testCase "translate higher order type" $
@@ -546,6 +548,8 @@ generatorTests =
         runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10; a=a+5; }"
     , testCase "while stmt translation" $
         runGenTest "while(x<5){x=x+1;}" "while(x<5) {x=x+1; }"
+    , testCase "for stmt translation" $
+        runGenTest "for(let x:int = 0; x < 5; x = x + 1){println(x);}" "for(let x = 0;x<5 ; x=x+1){console.log(x);}"
     , testCase "if stmt translation" $
         runGenTest "if(x<5)x=x*2;" "if( x<5) x=x*2; "
     , testCase "if else stmt translation" $
