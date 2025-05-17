@@ -17,7 +17,7 @@ import qualified Data.Map as Map
 import Generation.EnvTable (TraitTable, buildTraitTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
-import qualified Tokenizer.Token as then
+
 
 -- | generateJS: Converts a Program AST to JavaScript.
 generateJS :: Program -> String
