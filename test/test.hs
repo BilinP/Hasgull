@@ -10,7 +10,7 @@ import Tokenizer.Token (Token (..))
 import Tokenizer.Tokenizer
 
 main :: IO ()
-main = defaultMain generatorTests
+main = defaultMain tests
 
 tests :: TestTree
 tests =
@@ -18,6 +18,7 @@ tests =
     "All Tests"
     [ tokenizerTests
     , parserTests
+    ,generatorTests
     ]
 
 tokenizerTests :: TestTree
@@ -551,7 +552,7 @@ generatorTests = testGroup "Generator Tests"
   , testCase "new struct instance" $
       runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
   , testCase "Translate function definition" $
-      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a, x){\na=5; }\n\n"
+      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a, x) {\na=5; }\n\n"
   , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"

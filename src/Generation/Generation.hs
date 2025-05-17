@@ -60,12 +60,12 @@ generateJS (Program items stmts) =
 --  PI_Func funcdef -> translateFuncDef funcdef
 --  _ -> ""
 
-{-  | translateFuncDef: Translates a FuncDef AST node into a string of an equivalent javascript expression-}
+{-  | translateFuncDef: Translates a FuncDef AST node into a string of an equivalent javascript expression -}
 translateFuncDef :: FuncDef -> String
 translateFuncDef (FuncDef name params _retType body) =
   "function " ++ name ++ "(" ++ intercalate "," (map (\(Param p _) -> p) params) ++ ")" ++ translateBlock body
 
-{-  | translateBlock: Translates a list of statements into a JavaScript block.-}
+{-  | Translates a list of statements into a JavaScript block. -}
 translateBlock :: [Stmt] -> String
 translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
 

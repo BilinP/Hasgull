@@ -284,6 +284,7 @@ pPainandMisery = pExpr <* symbol SemiColonToken
 pParensCondition :: Parser Expr
 pParensCondition = between (symbol LParenToken) (symbol RParenToken) pCondition
 
+-- | Parses a conditional term expression in the following order from top to bottom:
 condTerm :: Parser Expr
 condTerm =
   choice
@@ -294,6 +295,7 @@ condTerm =
       pSelf
     ]
 
+-- | Operator table for condition expressions.
 condOperatorTable :: [[Operator Parser Expr]]
 condOperatorTable =
   [ [ binary EqualsToken Equals,
@@ -409,6 +411,7 @@ pProgram = runParser parseProgram ""
 ---------------------------------------------------------------------------
 -- Trait / Method / Struct / Implementation Parsers
 
+-- | check if Identifier 'token' for  struct name.
 pIdentifier :: Parser String
 pIdentifier = do
   tok <- satisfy isIdentifierToken
@@ -416,6 +419,7 @@ pIdentifier = do
     IdentifierToken name -> pure name
     _ -> fail "Expected identifier"
 
+-- | Parse a struct name.
 pAtomStructActualParam :: Parser StructActualParam
 pAtomStructActualParam =
   StructActualParam
@@ -423,9 +427,11 @@ pAtomStructActualParam =
     <* symbol ColonToken
     <*> pExpr
 
+-- | Parse a single struct actual parameter.
 pStructActualParam :: Parser StructActualParam
 pStructActualParam = try pAtomStructActualParam
 
+-- | Parse a comma-separated list of struct actual parameters.
 pStructActualParams :: Parser [StructActualParam]
 pStructActualParams = option [] $ do
   firstParam <- pAtomStructActualParam

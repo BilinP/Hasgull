@@ -30,7 +30,7 @@ data Token =
          | RBraceToken      -- ^ Represents the '}'.
          | CommaToken       -- ^ Represents the ','.
          | ColonToken       -- ^ Represents the ':'.
-         | ArrowToken       -- ^ Represents the '=>/' operator.
+         | ArrowToken       -- ^ Represents the '=>' operator.
          | SemiColonToken   -- ^ Represents the ';'.
          | DotToken         -- ^ Represents the '.'.
          | IntToken         -- ^ Represents the 'Int' keyword.
