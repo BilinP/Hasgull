@@ -14,7 +14,7 @@ import Prelude
 
 import Data.List (intercalate, (\\))
 import qualified Data.Map as Map
-import Generation.EnvTable (TraitTable, VarTable, buildTraitTable, buildVarTable)
+import Generation.EnvTable (TraitTable, buildTraitTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
 
@@ -23,7 +23,6 @@ generateJS :: Program -> String
 generateJS (Program items stmts) =
   let
     traitTbl = buildTraitTable items
-    varTbl = buildVarTable stmts
     itemJS = concatMap (translateItem traitTbl) items
     stmtJS = concatMap translateStmt stmts
    in
@@ -38,10 +37,6 @@ generateJS (Program items stmts) =
 -- translateProgramItem item = case item of
 --  PI_Func funcdef -> translateFuncDef funcdef
 --  _ -> ""
-
-translateFuncDef :: FuncDef -> String
-translateFuncDef (FuncDef name params _retType body) =
-  "function " ++ name ++ "(" ++ intercalate "," (map (\(Param p _) -> p) params) ++ ")" ++ translateBlock body
 
 translateBlock :: [Stmt] -> String
 translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
@@ -191,16 +186,9 @@ translateStruct (StructDef name fields) =
 translateFunc :: FuncDef -> String
 translateFunc (FuncDef name params _ body) =
   let
-    -- pull names out of each Param
     paramList = intercalate ", " [pname | Param pname _ <- params]
-
-    -- open the function
     header = "function " ++ name ++ "(" ++ paramList ++ ") {"
-
-    -- emit the body exactly as statements
     stmts = concatMap translateStmt body
-
-    -- close it
     footer = "}"
    in
     header ++ stmts ++ footer
@@ -213,7 +201,7 @@ jsConstructorName = \case
   BooleanType -> Just "Boolean"
   _ -> Nothing
 
--- Emit a prototype method assignment for a given type
+-- Emit a prototype method assignment for a type
 emitMethod :: Type -> ConcMethodDef -> String
 emitMethod typ (ConcMethodDef mName params _ body) =
   case jsConstructorName typ of
