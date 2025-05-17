@@ -1,4 +1,5 @@
-import Data.List (isSuffixOf)
+import Control.Exception (ErrorCall (..), evaluate, try)
+import Data.List (isInfixOf, isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
 import Parser.AST (Expr (Falseish, Trueish), Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName))
@@ -578,6 +579,27 @@ generatorTests =
         runGenTest
           "func sum(x:Int,y:Int): Void { x = y; }"
           "function sum(x, y) {x=y; }"
+    , testCase "TranslateImpl missing methods" $ do
+        let code =
+              "trait T { method foo(): Int; } \
+              \struct X { f: Int } \
+              \impl T for X { }"
+            -- tokenize & parse exactly like runGenTest does
+            tokens = either error id (tokenize code)
+            prog = either (error . show) id (pProgram tokens)
+        -- now *catch* the exception
+        result <-
+          try (evaluate (generateJS prog)) ::
+            IO (Either ErrorCall String)
+        case result of
+          Left (ErrorCall msg) ->
+            -- make sure we actually got your missing-methods message
+            assertBool
+              ("unexpected error message: " ++ msg)
+              ("is missing methods" `isInfixOf` msg)
+          Right js ->
+            assertFailure
+              ("Expected an error for missing methods, but got:\n" ++ js)
     , testCase "actually read from a file" $
         testreadFile "sample.gull" "increment" "Successfully Compilied!"
     , testCase "test not allowing a non .gull file to compile" $

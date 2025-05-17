@@ -7,8 +7,6 @@ import Parser.AST (AbsMethodDef, Expr (..), Param (..), ProgramItem (..), Stmt (
 -- | map from trait­name → its list of abstract methods
 type TraitTable = Map String [AbsMethodDef]
 
-type VarTable = Map String Expr
-
 -- | Build a table of all trait signatures in the program
 buildTraitTable :: [ProgramItem] -> TraitTable
 buildTraitTable =
