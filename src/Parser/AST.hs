@@ -1,32 +1,38 @@
--- |
--- Module      : Parser.AST
--- Description : The Abstract Syntax Tree (AST) for the Hasgull programming language.
---
--- This module defines the core AST data types used in Hasgull.
-module Parser.AST
-  ( Expr (..),
-    Type (..),
-    Param (..),
-    Stmt (..),
-    Program (..),
-    ProgramItem (..),
-    TraitDef (..),
-    AbsMethodDef (..),
-    StructDef (..),
-    ImplDef (..),
-    ConcMethodDef (..),
-    FuncDef (..),
-    StructActualParam (..),
-  )
+{- |
+Module      : Parser.AST
+Description : The Abstract Syntax Tree (AST) for the Hasgull programming language.
+
+This module defines the core AST data types used in Hasgull.
+-}
+module Parser.AST (
+  Expr (..),
+  Type (..),
+  Param (..),
+  Stmt (..),
+  Program (..),
+  ProgramItem (..),
+  TraitDef (..),
+  AbsMethodDef (..),
+  StructDef (..),
+  ImplDef (..),
+  ConcMethodDef (..),
+  FuncDef (..),
+  StructActualParam (..),
+)
 where
 
--- |
--- The 'Expr' data type represents expressions in the Hasgull language.
+{- |
+The 'Expr' data type represents expressions in the Hasgull language.
+-}
 data Expr
   = -- | A variable or identifier.
     Identifier String
   | -- | An integer literal.
     Int Int
+  | -- | Handles True
+    Trueish
+  | -- | Handles False
+    Falseish
   | -- | Creates a new struct instance.
     NewStruct Type [StructActualParam]
   | -- | Negation of an expression.
@@ -55,8 +61,9 @@ data Expr
     LessThan Expr Expr
   deriving (Eq, Ord, Show)
 
--- |
--- The 'Stmt' data type represents statements in the Hasgull language.
+{- |
+The 'Stmt' data type represents statements in the Hasgull language.
+-}
 data Stmt
   = -- | Variable declaration with initialization.
     LetStmt Param Expr
@@ -80,8 +87,9 @@ data Stmt
     ExprStmt Expr
   deriving (Eq, Ord, Show)
 
--- |
--- The 'Type' data type represents types in the Hasgull language.
+{- |
+The 'Type' data type represents types in the Hasgull language.
+-}
 data Type
   = -- | The integer type.
     IntType
@@ -97,32 +105,36 @@ data Type
     HigherOrderType [Type] Type
   deriving (Eq, Ord, Show)
 
--- |
--- The 'Param' data type represents parameters (for functions or declarations) with a name and type.
+{- |
+The 'Param' data type represents parameters (for functions or declarations) with a name and type.
+-}
 data Param
   = -- | A parameter with a name and an associated type.
     Param String Type
   deriving (Eq, Ord, Show)
 
--- |
--- The 'StructActualParam' data type represents an actual parameter used when creating a struct instance.
+{- |
+The 'StructActualParam' data type represents an actual parameter used when creating a struct instance.
+-}
 data StructActualParam
   = -- | A field initialization with a field name and an expression.
     StructActualParam String Expr
   deriving (Eq, Ord, Show)
 
--- |
--- The 'Program' data type represents an entire Hasgull program.
+{- |
+The 'Program' data type represents an entire Hasgull program.
+-}
 data Program = Program
-  { -- | Top-level program items such as struct, trait, or function definitions.
-    progItems :: [ProgramItem],
-    -- | Top-level statements.
-    progStmts :: [Stmt]
+  { progItems :: [ProgramItem]
+  -- ^ Top-level program items such as struct, trait, or function definitions.
+  , progStmts :: [Stmt]
+  -- ^ Top-level statements.
   }
   deriving (Show, Eq)
 
--- |
--- The 'ProgramItem' data type represents items that can appear at the top level in a program.
+{- |
+The 'ProgramItem' data type represents items that can appear at the top level in a program.
+-}
 data ProgramItem
   = -- | A struct definition.
     PI_Struct StructDef
@@ -134,74 +146,80 @@ data ProgramItem
     PI_Func FuncDef
   deriving (Show, Eq)
 
--- |
--- The 'TraitDef' data type represents a trait (or typeclass) definition.
+{- |
+The 'TraitDef' data type represents a trait (or typeclass) definition.
+-}
 data TraitDef = TraitDef
-  { -- | The name of the trait.
-    traitName :: String,
-    -- | The abstract methods declared by the trait.
-    traitAbsMethodDef :: [AbsMethodDef]
+  { traitName :: String
+  -- ^ The name of the trait.
+  , traitAbsMethodDef :: [AbsMethodDef]
+  -- ^ The abstract methods declared by the trait.
   }
   deriving (Show, Eq)
 
--- |
--- The 'AbsMethodDef' data type represents an abstract method definition within a trait.
+{- |
+The 'AbsMethodDef' data type represents an abstract method definition within a trait.
+-}
 data AbsMethodDef = AbsMethodDef
-  { -- | The name of the abstract method.
-    abMethName :: String,
-    -- | The parameters of the method.
-    abMethParameters :: [Param],
-    -- | The return type of the method.
-    abMethReturnType :: Type
+  { abMethName :: String
+  -- ^ The name of the abstract method.
+  , abMethParameters :: [Param]
+  -- ^ The parameters of the method.
+  , abMethReturnType :: Type
+  -- ^ The return type of the method.
   }
   deriving (Show, Eq)
 
--- |
--- The 'StructDef' data type represents a struct definition.
+{- |
+The 'StructDef' data type represents a struct definition.
+-}
 data StructDef = StructDef
-  { -- | The name of the struct.
-    strucName :: String,
-    -- | The fields of the struct.
-    strucFields :: [Param]
+  { strucName :: String
+  -- ^ The name of the struct.
+  , strucFields :: [Param]
+  -- ^ The fields of the struct.
   }
   deriving (Show, Eq)
 
--- |
--- The 'ImplDef' data type represents an implementation of a trait for a specific type.
+{- |
+The 'ImplDef' data type represents an implementation of a trait for a specific type.
+-}
 data ImplDef = ImplDef
-  { -- | The name of the trait being implemented.
-    implTraitName :: String,
-    -- | The type for which the trait is implemented.
-    iForType :: Type,
-    -- | The concrete method definitions that implement the trait.
-    iMethods :: [ConcMethodDef]
+  { implTraitName :: String
+  -- ^ The name of the trait being implemented.
+  , iForType :: Type
+  -- ^ The type for which the trait is implemented.
+  , iMethods :: [ConcMethodDef]
+  -- ^ The concrete method definitions that implement the trait.
   }
   deriving (Show, Eq)
 
--- |
--- The 'ConcMethodDef' data type represents a concrete method definition.
+{- |
+The 'ConcMethodDef' data type represents a concrete method definition.
+-}
 data ConcMethodDef = ConcMethodDef
-  { -- | The name of the concrete method.
-    cmName :: String,
-    -- | The parameters for the method.
-    cmParameters :: [Param],
-    -- | The return type of the method.
-    cmReturnType :: Type,
-    -- | The body of the method, expressed as a list of statements.
-    cmBody :: [Stmt]
+  { cmName :: String
+  -- ^ The name of the concrete method.
+  , cmParameters :: [Param]
+  -- ^ The parameters for the method.
+  , cmReturnType :: Type
+  -- ^ The return type of the method.
+  , cmBody :: [Stmt]
+  -- ^ The body of the method, expressed as a list of statements.
   }
   deriving (Show, Eq)
 
--- |
--- The 'FuncDef' data type represents a top-level function definition.
+{- |
+The 'FuncDef' data type represents a top-level function definition.
+-}
 data FuncDef = FuncDef
-  { -- | The function name.
-    funcName :: String,
-    -- | The parameters of the function.
-    funcParameters :: [Param],
-    -- | The return type of the function.
-    funcReturnType :: Type,
-    -- | The function body as a list of statements.
-    funcBody :: [Stmt]
+  { funcName :: String
+  -- ^ The function name.
+  , funcParameters :: [Param]
+  -- ^ The parameters of the function.
+  , funcReturnType :: Type
+  -- ^ The return type of the function.
+  , funcBody :: [Stmt]
+  -- ^ The function body as a list of statements.
   }
   deriving (Show, Eq)
