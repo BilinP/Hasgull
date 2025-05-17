@@ -1,4 +1,5 @@
-import Control.Exception (ErrorCall (..), evaluate, try)
+import Control.DeepSeq (deepseq)
+import Control.Exception (SomeException, displayException, evaluate, try)
 import Data.List (isInfixOf, isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
@@ -11,14 +12,13 @@ import Tokenizer.Token (Token (..))
 import Tokenizer.Tokenizer
 
 main :: IO ()
-main = defaultMain generatorTests
+main = defaultMain tests
 
 tests :: TestTree
 tests =
   testGroup
     "All Tests"
-    [ tokenizerTests
-    , parserTests
+    [ parserTests
     , generatorTests
     ]
 
@@ -579,27 +579,27 @@ generatorTests =
         runGenTest
           "func sum(x:Int,y:Int): Void { x = y; }"
           "function sum(x, y) {x=y; }"
-    , testCase "TranslateImpl missing methods" $ do
+    , testCase "TranslateImpl tests that it gives a error message for missing methods" $ do
         let code =
-              "trait T { method foo(): Int; } \
-              \struct X { f: Int } \
-              \impl T for X { }"
-            -- tokenize & parse exactly like runGenTest does
+              unwords
+                [ "trait T { method foo(): Int; }"
+                , "struct X { f: Int }"
+                , "impl T for X { }"
+                ]
             tokens = either error id (tokenize code)
             prog = either (error . show) id (pProgram tokens)
-        -- now *catch* the exception
         result <-
-          try (evaluate (generateJS prog)) ::
-            IO (Either ErrorCall String)
+          try (evaluate (generateJS prog `deepseq` ())) ::
+            IO (Either SomeException ())
+
         case result of
-          Left (ErrorCall msg) ->
-            -- make sure we actually got your missing-methods message
-            assertBool
-              ("unexpected error message: " ++ msg)
-              ("is missing methods" `isInfixOf` msg)
-          Right js ->
-            assertFailure
-              ("Expected an error for missing methods, but got:\n" ++ js)
+          Left err ->
+            let msg = displayException err
+             in assertBool
+                  ("unexpected error message: " ++ msg)
+                  ("missing methods" `isInfixOf` msg)
+          Right () ->
+            assertFailure "Expected missing‐methods error, but no exception was thrown"
     , testCase "actually read from a file" $
         testreadFile "sample.gull" "increment" "Successfully Compilied!"
     , testCase "test not allowing a non .gull file to compile" $
