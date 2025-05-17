@@ -27,7 +27,6 @@ module Generation.Generation (
   indent,
   translateIterForLoop,
   TraitTable,
-  VarTable,
 ) where
 
 import Prelude
