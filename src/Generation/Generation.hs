@@ -1,13 +1,31 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE InstanceSigs #-}
+{-|
+Module      : Generation.Generation
+Description : Code generation for the Hasgull programming language.
 
+This section of the module is responsible for emitting JavaScript code for methods
+and translating program items (such as struct, implementation, and function definitions)
+into their corresponding JavaScript representations.
+-}
 module Generation.Generation (
   generateJS,
+  translateFuncDef,
+  translateBlock,
   translateStmt,
   translateType,
   translateParam,
   translateExpr,
   createOutputFile,
+  translateStructParam,
+  translateFunc,
+  translateImpl,
+  translateItem,
+  wrapBlock,
+  indent,
+  translateIterForLoop,
+  TraitTable,
+  VarTable,
 ) where
 
 import Prelude
@@ -18,7 +36,9 @@ import Generation.EnvTable (TraitTable, buildTraitTable,VarTable,buildVarTable)
 import Parser.AST
 import System.IO (readFile, writeFile)
 
--- | generateJS: Converts a Program AST to JavaScript.
+
+
+{- | generateJS: Converts a Program AST to JavaScript.-}
 generateJS :: Program -> String
 generateJS (Program items stmts) =
   let
@@ -40,11 +60,12 @@ generateJS (Program items stmts) =
 --  PI_Func funcdef -> translateFuncDef funcdef
 --  _ -> ""
 
-
+{-  | translateFuncDef: Translates a FuncDef AST node into a string of an equivalent javascript expression-}
 translateFuncDef :: FuncDef -> String
 translateFuncDef (FuncDef name params _retType body) =
   "function " ++ name ++ "(" ++ intercalate "," (map (\(Param p _) -> p) params) ++ ")" ++ translateBlock body
 
+{-  | translateBlock: Translates a list of statements into a JavaScript block.-}
 translateBlock :: [Stmt] -> String
 translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
 
@@ -57,16 +78,14 @@ translateBlock stmts = "{" ++ intercalate " " (map translateStmt stmts) ++ "}"
 -- If it's a letstmt or some form of initilizer, we push into list
 -- Any call or AST part that isn't an immediate, we check that list, throw exception if not.
 
--- Test function to see if we can write the output of a generateJS to a test javascript file
-
+{- | Test function to see if we can write the output of a generateJS to a test javascript file-}
 createOutputFile :: Program -> String -> IO String
 createOutputFile output outputFilename = do
   let theOutputFile = outputFilename ++ ".js"
   writeFile theOutputFile (generateJS output)
   return "Successfully Compilied!"
 
--- Translate Type
--- translate an Type AST node into a string of an equivalent javascript expression
+{- | translate an Type AST node into a string of an equivalent javascript expression -}
 translateType :: Type -> String
 translateType t = case t of
   IntType -> "number"
@@ -79,7 +98,7 @@ translateType t = case t of
         returnTypeStr = translateType returnType
      in typesStr ++ " => " ++ returnTypeStr
 
--- Translate an expression AST node into a string of an equivalent javascript expression
+{- | Translate an expression AST node into a string of an equivalent javascript expression -}
 translateExpr :: Expr -> String
 translateExpr expr = case expr of
     Identifier name -> name
@@ -110,30 +129,31 @@ translateExpr expr = case expr of
     LessThan e1 e2 -> translateExpr e1 ++ "<" ++ translateExpr e2
     NewStruct t1 ps -> "new " ++ translateType t1 ++ "(" ++ intercalate "," (map translateStructParam ps) ++ ")"
 
-
+{- | Translate a StructActualParam AST node into a string of an equivalent javascript expression -}
 translateStructParam :: StructActualParam -> String
 translateStructParam sparam = case sparam of
   StructActualParam str e -> translateExpr e
 
--- Translate a Param AST node into a string of an equivalent javascript expression
+{- | Translate a Param AST node into a string of an equivalent javascript expression -}
 translateParam :: Param -> String
 translateParam (Param name t) =
   -- Since we are converting to javascript, then why would we include the type? The paraser should already have done the check on typing
   name
 
+{- | Wraps a block statement in curly braces-}
 wrapBlock :: Stmt -> String
 wrapBlock stmt = case stmt of
     BlockStmt stmts -> translateBlock stmts
     _               -> translateStmt stmt
 
---Helper function for the assgStmt in the For Loop
+{- |Helper function for the assgStmt in the For Loop-}
 translateIterForLoop :: Stmt -> String
 translateIterForLoop val = case val of
     AssgStmt e1 e2 -> translateExpr e1 ++ "=" ++ translateExpr e2 
     _ -> "err"
 
 
--- Translate a Stmt AST node into a string of an equivalent javascript expression
+{- | Translate a Stmt AST node into a string of an equivalent javascript expression-}
 translateStmt :: Stmt -> String
 translateStmt stmt = case stmt of
     BreakStmt -> "break;"
@@ -154,11 +174,11 @@ translateStmt stmt = case stmt of
     ExprStmt e -> translateExpr e ++ ";"
     _ -> "How did you get here?"
 
--- Indent Helper function
+{- | Indent Helper function-}
 indent :: Int -> String -> String
 indent n s = replicate (n * 2) ' ' ++ s
 
--- Translates a StructDef AST node into a string of an equivalent javascript
+{- | Translates a StructDef AST node into a string of an equivalent javascript-}
 translateStruct :: StructDef -> String
 translateStruct (StructDef name fields) =
   let
@@ -186,7 +206,7 @@ translateStruct (StructDef name fields) =
       ++ consEnd
       ++ footer
 
--- Translates a StructDef AST node into a string of an equivalent javascript
+{- | Translates a StructDef AST node into a string of an equivalent javascript-}
 translateFunc :: FuncDef -> String
 translateFunc (FuncDef name params _ body) =
   let
@@ -204,6 +224,7 @@ translateFunc (FuncDef name params _ body) =
    in
     header ++ stmts ++ footer
 
+{- | 'translateImpl' translates an implementation definition ('ImplDef') into its -}
 translateImpl :: TraitTable -> ImplDef -> String
 translateImpl tbl (ImplDef traitName forType methods) =
   case Map.lookup traitName tbl of
@@ -260,6 +281,11 @@ translateImpl tbl (ImplDef traitName forType methods) =
      in header ++ stmts ++ footer   
   emitMethod _ _ = ""
 
+{-|
+'translateItem' translates a top-level program item ('ProgramItem') into its 
+JavaScript equivalent. Depending on the type of program item it dispatches to
+the appropriate translation function.
+-}
 translateItem :: TraitTable -> ProgramItem -> String
 translateItem traitTbl = \case
   PI_Struct s -> translateStruct s

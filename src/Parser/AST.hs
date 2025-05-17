@@ -27,6 +27,10 @@ data Expr
     Identifier String
   | -- | An integer literal.
     Int Int
+  | -- | Handles True
+    Trueish
+  | -- | Handles False
+    Falseish
   | -- | Creates a new struct instance.
     NewStruct Type [StructActualParam]
   | -- | Negation of an expression.
