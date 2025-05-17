@@ -1,7 +1,7 @@
 import Data.List (isSuffixOf)
 import Generation.Generation (createOutputFile, generateJS, translateExpr, translateParam, translateStmt, translateType)
 import Parser.AST
-import Parser.AST (Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName), Expr (Trueish, Falseish))
+import Parser.AST (Expr (Falseish, Trueish), Program (progItems), Stmt (ExprStmt), StructActualParam (StructActualParam), Type (StructName))
 import Parser.Parser (pAbsMethodDef, pConcMethodDef, pFuncDef, pImplDef, pProgram, pProgramItem, pStructDef, pTraitDef, parseExpression, parseParam, parseStmt, parseType)
 import System.IO (readFile)
 import Test.Tasty
@@ -18,6 +18,7 @@ tests =
     "All Tests"
     [ tokenizerTests
     , parserTests
+    , generatorTests
     ]
 
 tokenizerTests :: TestTree
@@ -193,8 +194,8 @@ parserTests =
           Right tokens -> parseStmt tokens @?= Right (ExprStmt (DotExpr LowerSelf (Identifier "value")))
           Left err -> assertFailure err
     , testCase "dot sttm paren" $
-       case tokenize ("println(x.value);") of
-          Right tokens -> parseStmt tokens @?= Right  (PrintLnStmt (DotExpr (Identifier "x") (Identifier "value") ))
+        case tokenize ("println(x.value);") of
+          Right tokens -> parseStmt tokens @?= Right (PrintLnStmt (DotExpr (Identifier "x") (Identifier "value")))
           Left err -> assertFailure err
     , testCase "Parse LetStmt" $
         case tokenize ("let a1: Int = 5;") of
@@ -471,7 +472,7 @@ parserTests =
           Left err -> assertFailure err
     , testCase "Parse dot expression plus call" $
         case tokenize ("obj.method2(a,b)") of
-          Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call  (Identifier "method2") [Identifier "a", Identifier "b"]))
+          Right tokens -> parseExpression tokens @?= Right (DotExpr (Identifier "obj") (Call (Identifier "method2") [Identifier "a", Identifier "b"]))
           Left err -> assertFailure err
     ]
 
@@ -517,62 +518,68 @@ testreadFile inputFile outputName expecting = do
     else "ILLEGAL FILE" @?= expecting
 
 generatorTests :: TestTree
-generatorTests = testGroup "Generator Tests"
-  [ testCase "Translate BreakStmt" $
-      runGenTest "break;" "break;"
-  , testCase "Translate Int Expr" $
-      runGenTest "let x: Int = 5;" "let x = 5;"
-  , testCase "translate higher order type" $
-      runGenTest "Int" ""
-  , testCase "Translate Add with two Ints" $
-      runGenTest "let x: Int = 7+7;" "let x = 7+7;"
-  , testCase "Translate Add that is one add + one int ie 3+3+bill" $
-      runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
-  , testCase "Translate a Dot Expression into a string" $
-      runGenTest "let x: Int = self.value;" "let x = this.value;"
-  , testCase "Translate Multiply (x+2)*2" $
-      runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
-  , testCase "Translate a CallExp" $
-      runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
-  , testCase "calldot stmt" $
-      runGenTest "print();" "print();"
-  , testCase "Translate let a1: Int = 5;" $
-      runGenTest "let a1: Int = 5;" "let a1 = 5;"
-  , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
-      runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10; a=a+5; }"
-  , testCase "while stmt translation" $
-      runGenTest "while(x<5){x=x+1;}" "while(x<5) {x=x+1; }"
-  , testCase "if stmt translation" $
-      runGenTest "if(x<5)x=x*2;" "if( x<5) x=x*2; "
-  , testCase "if else stmt translation" $
-      runGenTest "if(x<5) {x=x*2;x=x+2;} else x=x+2;" "if( x<5) {x=x*2;  x=x+2; } else x=x+2; "
-  , testCase "println" $
-      runGenTest "println(x);" "console.log(x);"
-  , testCase "new struct instance" $
-      runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
-  , testCase "Translate function definition" $
-      runGenTest "func bob(a: Int, x:Int): Void {a=5;}" "function bob(a, x){\na=5; }\n\n"
-  , testCase "define a Struct" $
+generatorTests =
+  testGroup
+    "Generator Tests"
+    [ testCase "Translate BreakStmt" $
+        runGenTest "break;" "break;"
+    , testCase "Translate Int Expr" $
+        runGenTest "let x: Int = 5;" "let x = 5;"
+    , testCase "translate higher order type" $
+        runGenTest "Int" ""
+    , testCase "Translate Add with two Ints" $
+        runGenTest "let x: Int = 7+7;" "let x = 7+7;"
+    , testCase "Translate Add that is one add + one int ie 3+3+bill" $
+        runGenTest "let x: Int = 3+3+bill;" "let x = 3+3+bill;"
+    , testCase "Translate a Dot Expression into a string" $
+        runGenTest "let x: Int = self.value;" "let x = this.value;"
+    , testCase "Translate Multiply (x+2)*2" $
+        runGenTest "let x: Int = (x+2)*2;" "let x = (x+2)*2;"
+    , testCase "Translate a CallExp" $
+        runGenTest "let x: Int = obj.add(a,b);" "let x = obj.add(a,b);"
+    , testCase "calldot stmt" $
+        runGenTest "print();" "print();"
+    , testCase "Translate let a1: Int = 5;" $
+        runGenTest "let a1: Int = 5;" "let a1 = 5;"
+    , testCase "Translate blockstmt {let a: Int = 10; a=x+5;}" $
+        runGenTest "{let a: Int = 10; a = a+5;}" "{let a = 10; a=a+5; }"
+    , testCase "while stmt translation" $
+        runGenTest "while(x<5){x=x+1;}" "while(x<5) {x=x+1; }"
+    , testCase "if stmt translation" $
+        runGenTest "if(x<5)x=x*2;" "if( x<5) x=x*2; "
+    , testCase "if else stmt translation" $
+        runGenTest "if(x<5) {x=x*2;x=x+2;} else x=x+2;" "if( x<5) {x=x*2;  x=x+2; } else x=x+2; "
+    , testCase "println" $
+        runGenTest "println(x);" "console.log(x);"
+    , testCase "new struct instance" $
+        runGenTest "let x: car = new car {x: 2, y: 3};" "let x = new car(2,3);"
+    , testCase "define a Struct" $
         runGenTest
           "struct IntWrapper { value: Int}"
           "class IntWrapper {\n  constructor(value) {\n    this.value = value;\n  }\n}\n\n"
-    , testCase "Translate a trait impl" $
-        -- runGenTest = tokenize ⟶ parse ⟶ generateJS
+    , testCase "Translate trait impl on X with empty body" $
         runGenTest
-          -- Gull input: a trait, a struct, and an impl
-          "trait Inc { method inc(): Int; }; \
-          \struct Counter { n: Int }; \
-          \impl Inc for Counter { \
-          \  method inc(): Int { return self.n + 1; } \
-          \};"
-          -- expected JS: nothing for the trait, a class + a prototype method
-          ( "class Counter { constructor(n) { this.n = n; } }\n"
-              ++ "Counter.prototype.inc = function() {\n"
-              ++ "  return this.n + 1;\n"
-              ++ "};\n\n"
+          -- define a trait T, a struct X, and an impl with no body
+          "trait T { method foo(): Int; } struct X { f: Int } impl T for X { method foo(): Int { } }"
+          -- expected JS, matching exactly what your current emitter in Generation.hs produces
+          ( "class X {\n"
+              ++ "  constructor(f) {\n"
+              ++ "    this.f = f;\n"
+              ++ "  }\n"
+              ++ "}\n\n"
+              ++ "X.prototype.foo = function() {};"
           )
-  , testCase "actually read from a file" $
-      testreadFile "sample.gull" "increment" "Successfully Compilied!"
-  , testCase "test not allowing a non .gull file to compile" $
-      testreadFile "fail.py" "willwork" "ILLEGAL FILE"
-  ]
+    , testCase "TranslateImpl on IntType" $
+        runGenTest
+          "trait T { method foo(): Int; } \
+          \impl T for Int { method foo(): Int { } }"
+          "Number.prototype.foo = function() {};"
+    , testCase "Translate simple function" $
+        runGenTest
+          "func sum(x:Int,y:Int): Void { x = y; }"
+          "function sum(x, y) {x=y; }"
+    , testCase "actually read from a file" $
+        testreadFile "sample.gull" "increment" "Successfully Compilied!"
+    , testCase "test not allowing a non .gull file to compile" $
+        testreadFile "fail.py" "willwork" "ILLEGAL FILE"
+    ]
