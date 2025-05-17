@@ -43,6 +43,7 @@ library
       array >=0.5.8.0
     , base >=4.7 && <5
     , containers
+    , deepseq
     , megaparsec
     , parser-combinators
     , tasty
@@ -64,6 +65,7 @@ executable Hasgull-exe
     , array >=0.5.8.0
     , base >=4.7 && <5
     , containers
+    , deepseq
     , megaparsec
     , parser-combinators
     , tasty
@@ -86,6 +88,7 @@ test-suite Hasgull-test
     , array >=0.5.8.0
     , base >=4.7 && <5
     , containers
+    , deepseq
     , megaparsec
     , parser-combinators
     , tasty
