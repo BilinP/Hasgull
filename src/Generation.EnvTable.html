@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Generation.EnvTable</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Generation.EnvTable.html#buildTraitTable"><span class="hs-identifier">buildTraitTable</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Generation.EnvTable.html#TraitTable"><span class="hs-identifier">TraitTable</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">{-|
+Module      : Generation.EnvTable
+Description : Environment tables for traits and variables in Hasgull.
+
+This module provides functions to build lookup tables:
+  
+  * 'TraitTable', mapping a trait name to its abstract methods.
+  * 'VarTable', mapping a variable name to its corresponding expression as declared by let statements.
+-}</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Parser.AST.html"><span class="hs-identifier">Parser.AST</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Parser.AST.html#AbsMethodDef"><span class="hs-identifier">AbsMethodDef</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.AST.html#Expr"><span class="hs-identifier">Expr</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.AST.html#Param"><span class="hs-identifier">Param</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.AST.html#ProgramItem"><span class="hs-identifier">ProgramItem</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.AST.html#Stmt"><span class="hs-identifier">Stmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Parser.AST.html#LetStmt"><span class="hs-identifier">LetStmt</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.AST.html#TraitDef"><span class="hs-identifier">TraitDef</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><span class="hs-comment">-- | 'TraitTable' is a mapping from a trait name to its list of abstract methods.</span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">type</span><span> </span><span id="TraitTable"><span class="annot"><a href="Generation.EnvTable.html#TraitTable"><span class="hs-identifier hs-var">TraitTable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.AST.html#AbsMethodDef"><span class="hs-identifier hs-type">AbsMethodDef</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><span class="hs-comment">{-|
+'buildTraitTable' constructs a table of trait signatures from a list of program items.
+
+It traverses the program items and, for every trait definition (wrapped in 'PI_Trait'),
+inserts an entry mapping the trait's name to its list of abstract methods.
+-}</span></span><span>
+</span><span id="line-28"></span><span class="annot"><a href="Generation.EnvTable.html#buildTraitTable"><span class="hs-identifier hs-type">buildTraitTable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.AST.html#ProgramItem"><span class="hs-identifier hs-type">ProgramItem</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Generation.EnvTable.html#TraitTable"><span class="hs-identifier hs-type">TraitTable</span></a></span><span>
+</span><span id="line-29"></span><span id="buildTraitTable"><span class="annot"><span class="annottext">buildTraitTable :: [ProgramItem] -&gt; TraitTable
+</span><a href="Generation.EnvTable.html#buildTraitTable"><span class="hs-identifier hs-var hs-var">buildTraitTable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><span class="annottext">(ProgramItem -&gt; TraitTable -&gt; TraitTable)
+-&gt; TraitTable -&gt; [ProgramItem] -&gt; TraitTable
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">ProgramItem -&gt; TraitTable -&gt; TraitTable
+</span><a href="#local-6989586621679076708"><span class="hs-identifier hs-var">insertTrait</span></a></span><span> </span><span class="annot"><span class="annottext">TraitTable
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-31"></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679076708"><span class="annot"><span class="annottext">insertTrait :: ProgramItem -&gt; TraitTable -&gt; TraitTable
+</span><a href="#local-6989586621679076708"><span class="hs-identifier hs-var hs-var">insertTrait</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Parser.AST.html#PI_Trait"><span class="hs-identifier hs-type">PI_Trait</span></a></span><span> </span><span id="local-6989586621679076714"><span class="annot"><span class="annottext">TraitDef
+</span><a href="#local-6989586621679076714"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679076715"><span class="annot"><span class="annottext">TraitTable
+</span><a href="#local-6989586621679076715"><span class="hs-identifier hs-var">tbl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; [AbsMethodDef] -&gt; TraitTable -&gt; TraitTable
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TraitDef -&gt; String
+</span><a href="Parser.AST.html#traitName"><span class="hs-identifier hs-var">traitName</span></a></span><span> </span><span class="annot"><span class="annottext">TraitDef
+</span><a href="#local-6989586621679076714"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TraitDef -&gt; [AbsMethodDef]
+</span><a href="Parser.AST.html#traitAbsMethodDef"><span class="hs-identifier hs-var">traitAbsMethodDef</span></a></span><span> </span><span class="annot"><span class="annottext">TraitDef
+</span><a href="#local-6989586621679076714"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TraitTable
+</span><a href="#local-6989586621679076715"><span class="hs-identifier hs-var">tbl</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="#local-6989586621679076708"><span class="hs-identifier hs-var">insertTrait</span></a></span><span> </span><span class="annot"><span class="annottext">ProgramItem
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679076719"><span class="annot"><span class="annottext">TraitTable
+</span><a href="#local-6989586621679076719"><span class="hs-identifier hs-var">tbl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TraitTable
+</span><a href="#local-6989586621679076719"><span class="hs-identifier hs-var">tbl</span></a></span><span>
+</span><span id="line-35"></span></pre></body></html>

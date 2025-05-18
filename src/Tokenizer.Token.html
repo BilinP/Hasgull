@@ -1,0 +1,117 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">{-|
+Module      : Tokenizer.Token
+Description : Defines tokens used by the Hasgull language tokenizer.
+
+This module defines the Token data type and its constructors which represent the
+different tokens recognized by the tokenizer of the Hasgull programming language.
+-}</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Tokenizer.Token</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>   </span><span class="annot"><a href="Tokenizer.Token.html#Token"><span class="hs-identifier">Token</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="annot"><span class="hs-comment">{-|
+The 'Token' data type defines all tokens recognized by the Hasgull language.
+These tokens are used during lexical analysis to represent keywords,
+operators, punctuation, and other language elements.
+-}</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">data</span><span> </span><span id="Token"><span class="annot"><a href="Tokenizer.Token.html#Token"><span class="hs-identifier hs-var">Token</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>         </span><span id="EqualsToken"><span class="annot"><a href="Tokenizer.Token.html#EqualsToken"><span class="hs-identifier hs-var">EqualsToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the '==' operator.</span></span><span>
+</span><span id="line-19"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="EqualToken"><span class="annot"><a href="Tokenizer.Token.html#EqualToken"><span class="hs-identifier hs-var">EqualToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the '=' operator.</span></span><span>
+</span><span id="line-20"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="NotEqualToken"><span class="annot"><a href="Tokenizer.Token.html#NotEqualToken"><span class="hs-identifier hs-var">NotEqualToken</span></a></span></span><span>   </span><span class="annot"><span class="hs-comment">-- ^ Represents the '!=' operator.</span></span><span>
+</span><span id="line-21"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="GreaterThanToken"><span class="annot"><a href="Tokenizer.Token.html#GreaterThanToken"><span class="hs-identifier hs-var">GreaterThanToken</span></a></span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Represents the '&gt;' operator.</span></span><span>
+</span><span id="line-22"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="LessThanToken"><span class="annot"><a href="Tokenizer.Token.html#LessThanToken"><span class="hs-identifier hs-var">LessThanToken</span></a></span></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Represents the '&lt;' operator.</span></span><span>
+</span><span id="line-23"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="AddToken"><span class="annot"><a href="Tokenizer.Token.html#AddToken"><span class="hs-identifier hs-var">AddToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the '+' operator.</span></span><span>
+</span><span id="line-24"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="SubtractToken"><span class="annot"><a href="Tokenizer.Token.html#SubtractToken"><span class="hs-identifier hs-var">SubtractToken</span></a></span></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Represents the '-' operator.</span></span><span>
+</span><span id="line-25"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="MultiplyToken"><span class="annot"><a href="Tokenizer.Token.html#MultiplyToken"><span class="hs-identifier hs-var">MultiplyToken</span></a></span></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Represents the '*' operator.</span></span><span>
+</span><span id="line-26"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="DivideToken"><span class="annot"><a href="Tokenizer.Token.html#DivideToken"><span class="hs-identifier hs-var">DivideToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the '/' operator.</span></span><span>
+</span><span id="line-27"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="LParenToken"><span class="annot"><a href="Tokenizer.Token.html#LParenToken"><span class="hs-identifier hs-var">LParenToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the '('.</span></span><span>
+</span><span id="line-28"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="RParenToken"><span class="annot"><a href="Tokenizer.Token.html#RParenToken"><span class="hs-identifier hs-var">RParenToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the ')'.</span></span><span>
+</span><span id="line-29"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="LBraceToken"><span class="annot"><a href="Tokenizer.Token.html#LBraceToken"><span class="hs-identifier hs-var">LBraceToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the '{'.</span></span><span>
+</span><span id="line-30"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="RBraceToken"><span class="annot"><a href="Tokenizer.Token.html#RBraceToken"><span class="hs-identifier hs-var">RBraceToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the '}'.</span></span><span>
+</span><span id="line-31"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="CommaToken"><span class="annot"><a href="Tokenizer.Token.html#CommaToken"><span class="hs-identifier hs-var">CommaToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the ','.</span></span><span>
+</span><span id="line-32"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ColonToken"><span class="annot"><a href="Tokenizer.Token.html#ColonToken"><span class="hs-identifier hs-var">ColonToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the ':'.</span></span><span>
+</span><span id="line-33"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ArrowToken"><span class="annot"><a href="Tokenizer.Token.html#ArrowToken"><span class="hs-identifier hs-var">ArrowToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the '=&gt;' operator.</span></span><span>
+</span><span id="line-34"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="SemiColonToken"><span class="annot"><a href="Tokenizer.Token.html#SemiColonToken"><span class="hs-identifier hs-var">SemiColonToken</span></a></span></span><span>   </span><span class="annot"><span class="hs-comment">-- ^ Represents the ';'.</span></span><span>
+</span><span id="line-35"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="DotToken"><span class="annot"><a href="Tokenizer.Token.html#DotToken"><span class="hs-identifier hs-var">DotToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the '.'.</span></span><span>
+</span><span id="line-36"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="IntToken"><span class="annot"><a href="Tokenizer.Token.html#IntToken"><span class="hs-identifier hs-var">IntToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'Int' keyword.</span></span><span>
+</span><span id="line-37"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="VoidToken"><span class="annot"><a href="Tokenizer.Token.html#VoidToken"><span class="hs-identifier hs-var">VoidToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'Void' keyword.</span></span><span>
+</span><span id="line-38"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="BooleanToken"><span class="annot"><a href="Tokenizer.Token.html#BooleanToken"><span class="hs-identifier hs-var">BooleanToken</span></a></span></span><span>     </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'Boolean' keyword.</span></span><span>
+</span><span id="line-39"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="IfToken"><span class="annot"><a href="Tokenizer.Token.html#IfToken"><span class="hs-identifier hs-var">IfToken</span></a></span></span><span>          </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'if' keyword.</span></span><span>
+</span><span id="line-40"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ElseToken"><span class="annot"><a href="Tokenizer.Token.html#ElseToken"><span class="hs-identifier hs-var">ElseToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'else' keyword.</span></span><span>
+</span><span id="line-41"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="WhileToken"><span class="annot"><a href="Tokenizer.Token.html#WhileToken"><span class="hs-identifier hs-var">WhileToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'while' keyword.</span></span><span>
+</span><span id="line-42"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ReturnToken"><span class="annot"><a href="Tokenizer.Token.html#ReturnToken"><span class="hs-identifier hs-var">ReturnToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'return' keyword.</span></span><span>
+</span><span id="line-43"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="PrintLnToken"><span class="annot"><a href="Tokenizer.Token.html#PrintLnToken"><span class="hs-identifier hs-var">PrintLnToken</span></a></span></span><span>     </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'println' keyword.</span></span><span>
+</span><span id="line-44"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="FuncToken"><span class="annot"><a href="Tokenizer.Token.html#FuncToken"><span class="hs-identifier hs-var">FuncToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'func' keyword.</span></span><span>
+</span><span id="line-45"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="TrueToken"><span class="annot"><a href="Tokenizer.Token.html#TrueToken"><span class="hs-identifier hs-var">TrueToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'true' literal.</span></span><span>
+</span><span id="line-46"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="FalseToken"><span class="annot"><a href="Tokenizer.Token.html#FalseToken"><span class="hs-identifier hs-var">FalseToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'false' literal.</span></span><span>
+</span><span id="line-47"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="SelfToken"><span class="annot"><a href="Tokenizer.Token.html#SelfToken"><span class="hs-identifier hs-var">SelfToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'Self' keyword.</span></span><span>
+</span><span id="line-48"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="LowerCaseSelfToken"><span class="annot"><a href="Tokenizer.Token.html#LowerCaseSelfToken"><span class="hs-identifier hs-var">LowerCaseSelfToken</span></a></span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'self' keyword.</span></span><span>
+</span><span id="line-49"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="MethodToken"><span class="annot"><a href="Tokenizer.Token.html#MethodToken"><span class="hs-identifier hs-var">MethodToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'method' keyword.</span></span><span>
+</span><span id="line-50"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="BreakToken"><span class="annot"><a href="Tokenizer.Token.html#BreakToken"><span class="hs-identifier hs-var">BreakToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'break' keyword.</span></span><span>
+</span><span id="line-51"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ImplToken"><span class="annot"><a href="Tokenizer.Token.html#ImplToken"><span class="hs-identifier hs-var">ImplToken</span></a></span></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'impl' keyword.</span></span><span>
+</span><span id="line-52"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="LetToken"><span class="annot"><a href="Tokenizer.Token.html#LetToken"><span class="hs-identifier hs-var">LetToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'let' keyword.</span></span><span>
+</span><span id="line-53"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="TraitToken"><span class="annot"><a href="Tokenizer.Token.html#TraitToken"><span class="hs-identifier hs-var">TraitToken</span></a></span></span><span>       </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'trait' keyword.</span></span><span>
+</span><span id="line-54"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="NewToken"><span class="annot"><a href="Tokenizer.Token.html#NewToken"><span class="hs-identifier hs-var">NewToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'new' keyword.</span></span><span>
+</span><span id="line-55"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="ForToken"><span class="annot"><a href="Tokenizer.Token.html#ForToken"><span class="hs-identifier hs-var">ForToken</span></a></span></span><span>         </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'for' keyword.</span></span><span>
+</span><span id="line-56"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="StructToken"><span class="annot"><a href="Tokenizer.Token.html#StructToken"><span class="hs-identifier hs-var">StructToken</span></a></span></span><span>      </span><span class="annot"><span class="hs-comment">-- ^ Represents the 'struct' keyword.</span></span><span>
+</span><span id="line-57"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="IntegerToken"><span class="annot"><a href="Tokenizer.Token.html#IntegerToken"><span class="hs-identifier hs-var">IntegerToken</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Represents an integer literal.</span></span><span>
+</span><span id="line-58"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="IdentifierToken"><span class="annot"><a href="Tokenizer.Token.html#IdentifierToken"><span class="hs-identifier hs-var">IdentifierToken</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Represents an identifier.</span></span><span>
+</span><span id="line-59"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span id="StructNameToken"><span class="annot"><a href="Tokenizer.Token.html#StructNameToken"><span class="hs-identifier hs-var">StructNameToken</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Represents the name of a structure.</span></span><span>
+</span><span id="line-60"></span><span>          </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679077118"><span id="local-6989586621679077126"><span class="annot"><span class="annottext">Token -&gt; Token -&gt; Bool
+(Token -&gt; Token -&gt; Bool) -&gt; (Token -&gt; Token -&gt; Bool) -&gt; Eq Token
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Token -&gt; Token -&gt; Bool
+== :: Token -&gt; Token -&gt; Bool
+$c/= :: Token -&gt; Token -&gt; Bool
+/= :: Token -&gt; Token -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679077134"><span id="local-6989586621679077142"><span id="local-6989586621679077146"><span id="local-6989586621679077149"><span id="local-6989586621679077152"><span id="local-6989586621679077155"><span id="local-6989586621679077158"><span class="annot"><span class="annottext">Eq Token
+Eq Token =&gt;
+(Token -&gt; Token -&gt; Ordering)
+-&gt; (Token -&gt; Token -&gt; Bool)
+-&gt; (Token -&gt; Token -&gt; Bool)
+-&gt; (Token -&gt; Token -&gt; Bool)
+-&gt; (Token -&gt; Token -&gt; Bool)
+-&gt; (Token -&gt; Token -&gt; Token)
+-&gt; (Token -&gt; Token -&gt; Token)
+-&gt; Ord Token
+Token -&gt; Token -&gt; Bool
+Token -&gt; Token -&gt; Ordering
+Token -&gt; Token -&gt; Token
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: Token -&gt; Token -&gt; Ordering
+compare :: Token -&gt; Token -&gt; Ordering
+$c&lt; :: Token -&gt; Token -&gt; Bool
+&lt; :: Token -&gt; Token -&gt; Bool
+$c&lt;= :: Token -&gt; Token -&gt; Bool
+&lt;= :: Token -&gt; Token -&gt; Bool
+$c&gt; :: Token -&gt; Token -&gt; Bool
+&gt; :: Token -&gt; Token -&gt; Bool
+$c&gt;= :: Token -&gt; Token -&gt; Bool
+&gt;= :: Token -&gt; Token -&gt; Bool
+$cmax :: Token -&gt; Token -&gt; Token
+max :: Token -&gt; Token -&gt; Token
+$cmin :: Token -&gt; Token -&gt; Token
+min :: Token -&gt; Token -&gt; Token
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679077163"><span id="local-6989586621679077174"><span id="local-6989586621679077178"><span class="annot"><span class="annottext">Int -&gt; Token -&gt; ShowS
+[Token] -&gt; ShowS
+Token -&gt; String
+(Int -&gt; Token -&gt; ShowS)
+-&gt; (Token -&gt; String) -&gt; ([Token] -&gt; ShowS) -&gt; Show Token
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Token -&gt; ShowS
+showsPrec :: Int -&gt; Token -&gt; ShowS
+$cshow :: Token -&gt; String
+show :: Token -&gt; String
+$cshowList :: [Token] -&gt; ShowS
+showList :: [Token] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span></pre></body></html>

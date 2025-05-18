@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Docs.FAQ</title><link href="linuwial.css" rel="stylesheet" type="text/css" title="Linuwial" /><link rel="stylesheet" type="text/css" href="quick-jump.css" /><link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700" /><script src="haddock-bundle.min.js" async="async" type="text/javascript"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { processClass: "mathjax", ignoreClass: ".*" } });</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script></head><body><div id="package-header"><span class="caption">Hasgull-0.1.0.0</span><ul class="links" id="page-menu"><li><a href="src/Docs.FAQ.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul></div><div id="content"><div id="module-header"><table class="info"><tr><th>Safe Haskell</th><td>Safe-Inferred</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Docs.FAQ</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>This documentation page addresses several questions regarding the design of the Hasgull language.</p><h1>A short explanation of what the language is</h1><p>Somewhat Haskell-like language with a form of typeclassing. Users can create abstract functions and then later implement them for types, these can be our primitives, such as Int, Boolean, or Void, or it can be a user-defined struct. Functions can have the same names but are different.</p><h1>How do I compile your compiler?</h1><p>To compile, you'll need to use Stack. First, run <strong>stack build</strong> to build the project (if necessary). Pretty much no other special setup is needed. Other then installing the current version of Stack and Haskell. You can find the installation instructions for Stack at <a href="https://docs.haskellstack.org/en/stable/README/">https://docs.haskellstack.org/en/stable/README/</a> abnd the Haskell installation instructions at <a href="https://www.haskell.org/downloads/">https://www.haskell.org/downloads/</a>. </p><h1>How do I run your compiler?</h1><p>Then use <strong>stack exec Hasgull-exe firstarg secondarg</strong> to run the compiler. The compilation process will only begin if firstarg is a file with the .gull extension and exactly two command-line arguments are provided. The second argument is the name of the output file. The compiler will generate a JavaScript file with the same name as the second argument, but with a .js extension.</p><p>Example wrong usage:</p><pre>stack exec Hasgull-exe test.py ant 
+</pre><p>This will fail since test.py is not a .gull file.</p><pre>stack exec Hasgull-exe sample.gull output flag 
+</pre><p>This will fail since there are too many arguments.</p><p>Example correct usage:</p><pre>stack exec Hasgull-exe sample.gull output
+</pre><p>This will create a file named output.js with the compiled JavaScript code. where if you have Node.js installed, you can run the output file with: </p><pre>node {output.js} (file name)
+</pre><h1>How do I run your tests?</h1><p>To run the test cases (already defined in our code) for each component of our compiler in our code, you can use pattern matching for that specific test part:</p><p>For Tokenizer</p><pre>stack test-arguments=&quot;--pattern=Tokenizer&quot;
+</pre><p>For Parser</p><pre>stack test --test-arguments=&quot;--pattern=Parser&quot;
+</pre><p>Code Generation</p><pre>stack test --test-arguments=&quot;--pattern=Generation&quot;
+</pre><p>Or to just run them all</p><pre>stack test 
+</pre><p>Each stage builds upon the previous one. For example, the Parser depends on the Tokenizer to produce tokens before parsing, and Code Generation depends on both the Tokenizer and the Parser to generate the final output.</p><h1>Code snippets in your language highlighting features and edge cases, along with relevant explanations</h1><p>For example, to demonstrate our typeclass system, which works similarly to Java's interface mechanism, we define a base trait with a method called add that takes another value of the same type and returns a result of that type. Then we use an impl block for a specific type to define the actual method implementation. Structs can also be used as valid types in this system, following the same trait and impl. We also have functions that take parameters and return values</p><pre>trait Addable {
+method add(other: Self): Self;
+}
+trait Printable {
+method print(): Void;
+}
+struct IntWrapper {
+value: Int
+}
+impl Addable for Int {
+method add(other: Int): Int {
+return self + other;
+}
+}
+
+
+impl Addable for IntWrapper {
+method add(other: IntWrapper): IntWrapper {
+return new IntWrapper { value: self.value + other.value };
+}
+
+}
+
+impl Printable for Boolean {
+    method print(): Void{
+        println(1);
+    }
+}
+
+impl Printable for Int {
+method print(): Void {
+println(self);
+}
+}
+
+impl Printable for IntWrapper {
+method print(): Void {
+println(self.value);
+}
+}
+
+func bob(a: Int, x:Int): Int {
+    if( a &lt; x){
+        return a;
+    } else{
+        return x;
+    }
+
+}
+</pre><p>Which then compiles into this.</p><pre>class IntWrapper {
+  constructor(value) {
+    this.value = value;
+  }
+}
+
+Number.prototype.add = function(other) {return this+other; };IntWrapper.prototype.add = function(other) {return new IntWrapper(this.value+other.value); };Boolean.prototype.print = function() {console.log(1);};Number.prototype.print = function() {console.log(this);};IntWrapper.prototype.print = function() {console.log(this.value);};function bob(a, x) {if( a&lt;x) {return a; } else {return x; }}
+</pre><p>The javascript output is messy, but if the programmer really cares about that, then they can clean it up on their own time or easily format the code .</p><p>However, we do somewhat have a checker if the user actually created a trait to be later given definition with impl for a type. 
+If you just do impl Addable for Int { &#8230;&#8230;} and try to compile. It will spit out out:</p><pre>Hasgull-exe.EXE: Unknown trait: Addable
+CallStack (from HasCallStack):
+</pre><p>If statement in between a while stmt that compiles into javascript.</p><pre>INPUT:
+while(x &lt; 5){
+    a3 = a3 + 5;
+    println(a3);
+    if(a3 == 17){
+        break;
+    }
+    x = x + 1;
+}
+
+OUTPUT:
+while(x&lt;5) {a3=a3+5;  console.log(a3); if( a3===17) {break;} x=x+1; }
+</pre><p>You can do binary expressions with different types and will compile, but what happens after is really up to javascript.</p><pre>INPUT (with the above code for typeclasses):
+
+let a5: Boolean = true;
+let a2: IntWrapper = new IntWrapper { value: 7 };
+let a3: Int = a1.add(2);
+let a4: IntWrapper = a2.add(new IntWrapper { value: 3 });
+a3.print();
+a4.print();
+a5=a5+a1
+
+OUTPUT:
+let a5 = true;let a2 = new IntWrapper(7);let a3 = a1.add(2);let a4 = a2.add(new IntWrapper(3));a3.print();a4.print();a5=a5+1
+</pre><p>Due to no type checker, you can add two variables of different typing and assign it to another type. In this case, we add a voiid type variable to a boolean variable and assign it to an int variable. This is undefined behavior because the runtime is dependent on the javascript runtime.</p><pre>INPUT:
+let a: Boolean = true;
+let x: Int = 10;
+let y: Int = 20;
+let fup: Void = theWhiler(x, y);
+let goo: Void = theL();
+fup;
+goo;
+y=a+fup;
+
+OUTPUT:
+let a = true;let x = 10;let y = 20;let fup = theWhiler(x,y);let goo = theL();fup;goo;y=a+fup; 
+</pre><p>A cool feature of our language is its ability to ignore comments, thanks to a tokenizer that&#8217;s designed to skip over them. This allows programmers to include comments in the source language for clarity, while the compiled output is clean and free of comments, ensuring execution without the clutter. </p><pre>removeComments :: String -&gt; String
+removeComments [] = []
+removeComments (<code><a href="../base-4.19.2.0/Prelude.html#v:-47-" title="Prelude">/</a></code> : <code><a href="../base-4.19.2.0/Prelude.html#v:-47-" title="Prelude">/</a></code> : rest) = removeComments (dropWhile (/= 'n') rest)
+removeComments (keep : check) = keep : removeComments check
+</pre><p>In this code it first pattern matches for a  &quot;//&quot; and then drops until it sees the new line character. One obvious limitation edge case would be multiple line comments/End of line comments which could be fairly easy to add looking for if its looks for  /* and the end */ but at that moment we thought based on this being quirk and the time factor we decided to just keep it as is. </p><h2>Why this language, and why this language design?</h2><ul><li><strong>William</strong>:  
+  &quot;I would say that I thought it would be easy seeing as I worked mostly with javascript since that was the target language but didn't expect how different Haskell would be to code it in.&quot;</li><li><strong>Sebastian</strong>:  
+  &quot;I was mostly interested in the meta language, because I&#8217;ve never really touched a functional language, and seeing that the compiler was written in Haskell really intrigued me. It definitely is a very interesting language, and doing nothing but JavaScript and Java for the past two years really did wear me down from Object-Oriented languages. Don&#8217;t get me wrong, megaparsec is a really, really handy library for creating a parser, but I just want to try a functional language rather than stick with Java or JavaScript.&quot;</li><li><strong>Angel</strong>:  
+  &quot;It seemed fun and I wanted to work with Haskell. I was interested in the functional programming paradigm and it seemed like a great way to get a deep dive into how it worked. The idea behind TypeClasses and ADT is novel to me and it reduced a bunch of boilerplate.&quot;</li><li><strong>Bilin</strong>:  
+  &quot;Honestly, Haskell wouldn't have been my first choice, but since everyone else wanted to use it, I decided to go with the flow. Looking back now, it actually seems like one of the easier languages to implement a compiler in; thanks to features like pattern matching and the fact that it's not OOP, we're basically able to do each part of the compiler in one file. The main reason we chose this language design is that, after selecting Haskell, this was pretty much the only project that actually referenced Haskell.&quot;</li></ul><h2>What kind of problems might this language solve, and why was it designed this way?</h2><p>Hasgull is designed for front-end projects, due to the target language being JavaScript. Its goal was to emulate TypeClasses allowing methods to be reused across various types. Time constraints meant that the generics, ADT, and recursive types aspects were omitted. As a result, the intended TypeClass system ended up resembling Java interfaces but for a specific group of Types and Structs. The language enforces that those implementing Traits must write a method for that type.</p><p>This method enforcement increases code performance and predictability. By bringing types to JavaScript and enforcing this Trait system, JavaScript benefits from monomorphic optimizations, which can improve performance. In addition, enforcing proper implementations makes the code less error-prone and more predictable.</p><h2>Known limitations</h2><ul><li><p><strong>Lack of typechecking</strong></p><ul><li>No real typechecker exists beyond verifying if a trait has been implemented for a given `impl prog def`.</li><li>Example: `let x: Boolean = true;` followed by `y = x * 2;` is valid syntax from the compiler&#8217;s perspective, but the output JavaScript might not behave as the programmer intends.</li><li>The compiler does not verify type correctness beyond trait implementation.</li></ul></li></ul><ul><li><p><strong>No runtime variable initialization checks:</strong></p><ul><li>The compiler doesn't track whether a variable (like identifier i in the AST) was initialized during code generation.</li><li>Due to time constraints, scaffolding for variable tracking wasn't implemented.</li></ul></li><li><p><strong>Limited primitive types:</strong></p><ul><li>Only three primitive data types are supported.</li><li>There are no character or string primitives.</li></ul></li><li><p><strong>Poor higher-order function support:</strong></p><ul><li>Although parsing for higher-order functions exists, the syntax is awkward and not recommended for use.</li></ul></li><li><p><strong>No native support for arrays or lists:</strong></p><ul><li>No support for arrays or lists:</li></ul></li></ul><h2>Knowing what you know now, what would you do differently?</h2><ul><li><strong>William</strong>: Knowing what I know now, I would rather choose a different meta language than Haskell. Having Javascript as the target language did make it easier since I knew it quite well. It's just that working with a functional language instead of an object oriented language really threw me for a loop. I would also change the way our group had worked on the project so that we were a bit more organized since they way we did it was more like just asking if anyone has worked on/ is working on something and trying to figure out what isn&#8217;t being worked on. It wasn&#8217;t a bad way of doing the project. I just would have just preferred a more organized approach. Everything else was fine, we had no real problems with github or our choice of development tool. I was using visual studio code for the entire project and I had no real problems with it.</li><li><strong>Sebastian</strong>: One big thing honestly would be to put a more critical eye towards our productions because our current productions are traitor-like. When we started working on the tokenizer and parser, we ended up adding extra symbols and statements simply because it felt strange not to have things like a greater-than operator or a for-loop I feel that in terms of the higher order type, we probably couldn&#8217;t do different grammar just so that it could better be translated, because it&#8217;s such a weird format in comparison to the other types that we couldn't fully get it operational.Keep the target language, because honestly it did somewhat make the translation part a bit easier because we could just convert statements and expressions straight into the javascript equivalent. Plus, with javascript being dynamically typed, and allowing for weird expressions like add a boolean and integer together, it somewhat was like a typechecker. For the communication, I think it was fine, we first just talked about how we were going to implement each phase and then in those phases, we said what parts were going to be done. We would have a bounty board where someone says they will do the parsing for types, or statements, or defining our tokens</li><li><strong>Angel</strong>: At first, I had trouble with our development environment, but I managed to power through it. The linter didn&#8217;t work well, so I kept running into indenting issues that held me back at certain times. I should have fixed or addressed it early on because it would have gotten rid of something I did not have to think about. The target language being JavaScript was a good choice because, besides the Trait and Implementation details it was pretty much a one-to-one in terms of transferring it over. The communication was fine, but I think we should have followed your initial advice and split into groups of 2 people per section. At certain points, 2 would have been enough to fulfill certain aspects of the project and would have increased our productivity. I think we could have been better about sharing resources and the overall goal of the language. We learned as we went along</li><li><strong>Bilin</strong>: Knowing what I know now, I would have approached the project task assignment differently. Starting work well before the deadline would have helped avoid the time crunch we faced. Our approach was to set up a task board and let team members choose what they wanted to work on, but a more structured method of assigning tasks might have improved our workflow, especially since I believe some people did more than others. I wouldn&#8217;t change much about the development tools we used, but one thing I wish we had tried was implementing a bottom-up parser (which we did try to implement with happy but had to scrap it for megaparser) which uses grammars reduction as the foundation. From what I&#8217;ve read, it tends to be faster and could have optimized our parser. As for the target language, I chose JavaScript because it's not strictly object-oriented, which made generating the output code simpler. Plus, most members of the group were already familiar with it. However, Rust might have been a better choice in terms of language features, since it supports some OOP-like constructs such as struct and impl. That said, we had limited experience with Rust, which would have made building a compiler that targets it much more challenging.</li></ul><h1>An explanation of the state of your compiler </h1><p>The compiler itself works pretty much 95%. While we don&#8217;t have any typechecker, and the higher order type couldn&#8217;t really make the cut for code generation(We don&#8217;t have enough time honestly to create a special case for it in the generator, and looking at our syntax for function definitions, I&#8217;m not really sure how to best translate it- Sebastian). Our tokenizer, parser, and generator work. You can go stack build to build it, then do stack exec Hasgull-exe input.gull outputName and it will compile that code in the input.gull into a <em>outputName.js</em> file with equivalent javascript code.</p><h1>Information about what you've learned on the project</h1><ul><li><strong>William</strong>: This project taught me alot on how coding languages can vary and how they run things behind the scenes. I was also able to learn about haskell due to this project which I probably never would have learned on my own. I learned how a small thing like basic arithmetic needed to be structured so that it can be properly done in code. As someone who is interested in math I plan to learn more about functional programming languages and how different they are compared to object oriented programming languages.</li><li><strong>Sebastian</strong>: This project was pretty much my sole experience learning haskell, which while strange, is honestly quite a neat language. The megaparsec library too, which is a really robust library for creating parsers that was really useful for us. For the code generation portion, a lot of it was learning just how to best translate into javascript, because we did really have to think about how the base language would look in javascript to run how the programmer would run it.</li><li><strong>Angel</strong>:This project taught me a lot about the process of building a compiler as well as benefits of different programming language paradigms. I learned how to build a Lexor, Parser, and CodeGenerator. The time that can be saved by choosing a language that supports pattern matching and Algebraic Data Types. We did not have to make unnecessary classes. That Decisions have to be made due to time constraints and it can just be blamed on the programmer. </li><li><strong>Bilin</strong>: This project, especially the main goal of creating a compiler, taught me a lot. I never realized what a compiler does in the back and this class and project taught me the key components such as Tokenizer, Parser, Type Checker (I created a mock-up but didn&#8217;t have enough time to fully implement it), and Code Generator. Using Haskell for the first time was challenging. It was difficult to understand certain concepts without relying on example code or using AI tools to explain things. Despite the initial learning curve, our team was happy with the decision to use Haskell. It allowed us to avoid unnecessary classes which we often saw in the class examples. At one point, we considered making the output from the Code Generator more human-readable. However, we realized that the purpose of a compiler is to generate output for machines to understand, not humans. Because of that, we decided to keep what we have and drop any further plans for  &#8220;readable code&#8221;. Overall, this project came with a steep learning curve, but it was worth it. I even got to learn how to use GitHub Pages and GitHub Actions to automate the build documentation and updating/publishing for the site.</li></ul></div></div><div id="interface"></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.30.0</p></div></body></html>

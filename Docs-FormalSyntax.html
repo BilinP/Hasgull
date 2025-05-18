@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Docs.FormalSyntax</title><link href="linuwial.css" rel="stylesheet" type="text/css" title="Linuwial" /><link rel="stylesheet" type="text/css" href="quick-jump.css" /><link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700" /><script src="haddock-bundle.min.js" async="async" type="text/javascript"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { processClass: "mathjax", ignoreClass: ".*" } });</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script></head><body><div id="package-header"><span class="caption">Hasgull-0.1.0.0</span><ul class="links" id="page-menu"><li><a href="src/Docs.FormalSyntax.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul></div><div id="content"><div id="module-header"><table class="info"><tr><th>Safe Haskell</th><td>Safe-Inferred</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Docs.FormalSyntax</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>This module provides a formal syntax definition for Hasgull in an extended
+EBNF-style notation. Copy and paste the following definitions as a reference.</p><h2>Formal Syntax Definition</h2><h3>Types and Identifiers</h3><ul><li><strong>var</strong> Represents a variable.</li><li><strong>structname</strong> Represents the name of a struct.</li><li><strong>traitname</strong>  Represents the name of a trait (typeclass).</li><li><strong>i</strong>  Represents an integer.</li></ul><h3>Concrete Syntax</h3><pre><strong>comma_type</strong> ::= [type (`,` type)*]
+</pre><pre><strong>type</strong> ::=
+         <code><a href="../base-4.19.2.0/Data-Int.html#t:Int" title="Data.Int">Int</a></code> | <code>Void</code> | <code>Boolean</code> | <em>Built-in types</em>
+         <code>Self</code> | <em>Refers to our own type in a trait</em>
+         structname | <em>Structs are a valid kind of type</em>
+         `(` type `)` | <em>Parenthesized type</em>
+         `(` comma_type `)` `=&gt;` type <em>Higher-order function</em>
+</pre><pre><strong>param</strong> ::= var <code>:</code> type
+</pre><pre><strong>comma_param</strong> ::= [param (`,` param)*]
+</pre><pre><strong>structdef</strong> ::= <code>struct</code> structname `{` comma_param `}`
+</pre><pre><em>Definition of an abstract method</em>
+<strong>abs_methoddef</strong> ::= <code>method</code> var (` comma_param `)` <code>:</code> type `;`
+</pre><pre><em>Definition of a concrete method</em>
+<strong>conc_methoddef</strong> ::= <code>method</code> var (` comma_param `)` <code>:</code> type `{` stmt* `}`
+</pre><pre><em>Definition of a trait (typeclass)</em>
+<strong>traitdef</strong> ::= <code>trait</code> traitname `{` abs_methoddef* `}`
+</pre><pre><em>Definition of an implementation of a typeclass</em>
+<strong>impldef</strong> ::= <code>impl</code> traitname <code>for</code> type `{` conc_methoddef* `}`
+</pre><pre><em>Definition of a toplevel function</em>
+<strong>funcdef</strong> ::= <code>func</code> var `(` comma_param `)` <code>:</code> type `{` stmt* `}` 
+</pre><pre><strong>stmt</strong> ::= 
+         `let` param `=` exp `;` | <em>Variable declaration</em>
+         var `=` exp `;` | <em>Assignment</em>
+         `if` `(` exp `)` stmt [`else` stmt] | <em>if</em>
+         <code>while</code> `(` exp `)` stmt | <em>while</em>
+         <code><a href="../base-4.19.2.0/GHC-List.html#v:break" title="GHC.List">break</a></code> `;` | <em>break</em>
+         <code>println</code> `(` exp `)` | <em>Printing something</em>
+         `{` stmt* `}` | <em>Block</em>
+         <code><a href="../base-4.19.2.0/Control-Monad.html#v:return" title="Control.Monad">return</a></code> [exp] `;` | <em>Return</em>
+         exp `;` <em>Expression statements</em>
+</pre><pre><strong>struct_actual_param</strong> ::= var <code>:</code> exp
+</pre><pre><strong>struct_actual_params</strong> ::= [struct_actual_param (`,` struct_actual_param)*]
+</pre><pre><strong>primary_exp</strong> ::= 
+                 i | var | <em>Integers and variables</em>
+                 <code>true</code> | <code>false</code> | <em>Booleans</em>
+                 <code>self</code> | <em>Instance on which we call a method</em>
+                 `(` exp `)` | <em>Parenthesized expression</em>
+
+                 <em>Creates a new instance of a struct</em>
+                 <code>new</code> structname `{` struct_actual_params `}`
+</pre><pre><em>Accessing a struct field or method</em>
+<strong>dot_exp</strong> ::= primary_exp (<code><a href="../base-4.19.2.0/Data-Function.html#v:." title="Data.Function">.</a></code> var)*
+</pre><pre><strong>call_exp</strong> ::= dot_exp (`(` comma_exp `)`)*
+</pre><pre><strong>mult_exp</strong> ::= call_exp ((<code><a href="../base-4.19.2.0/Prelude.html#v:-42-" title="Prelude">*</a></code> | <code><a href="../base-4.19.2.0/Prelude.html#v:-47-" title="Prelude">/</a></code>) call_exp)*
+</pre><pre><strong>add_exp</strong> ::= mult_exp ((<code><a href="../base-4.19.2.0/Prelude.html#v:-43-" title="Prelude">+</a></code> | <code><a href="../base-4.19.2.0/Prelude.html#v:-45-" title="Prelude">-</a></code>) mult_exp)*
+</pre><pre><strong>less_than_exp</strong> ::= add_exp [<code><a href="../base-4.19.2.0/Data-Ord.html#v:-60-" title="Data.Ord">&lt;</a></code> add_exp]
+</pre><pre><strong>equals_exp</strong> ::= less_than_exp [(<code><a href="../base-4.19.2.0/Data-Eq.html#v:-61--61-" title="Data.Eq">==</a></code> | <code>!=</code>) less_than_exp]
+</pre><pre><strong>exp</strong> ::= equals_exp
+</pre><pre><strong>program_item</strong> ::= structdef | traitdef | impldef | funcdef
+</pre><pre><strong>program</strong> ::= program_item* stmt* stmt* is the entry point
+</pre></div></div><div id="interface"></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.30.0</p></div></body></html>
